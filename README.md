@@ -69,7 +69,4 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 ## Do zrobienia
 
 * Lepsze zabezpieczenie programu przez błędnymi inputami i połączeniami
-* Ogarnięcie konsolowego GUI aby skalowało się do długości stringów + jakaś zmiana szaty?
 * Zaimplementowanie configu
-* Usunięcie powtarzających się komunikatów w stoperze z nazwą zadania z redmine
-* Dodanie polecenia git commit -m f"{komentarz}" && git push po zakończeniu mierzenia czasu zadania
