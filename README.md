@@ -2,7 +2,7 @@
 
 Śledź swoje postępy przy zadaniach w Redmine z CZASOINATOREM!
 
-<img align="left" title="W sumie całkiem fajne to wyszło" src="https://raw.githubusercontent.com/EXCV31/CZASOINATOR/main/screenshoot.png" />
+<img align="left" title="W sumie całkiem fajne to wyszło" src="https://raw.githubusercontent.com/EXCV31/CZASOINATOR/main/screenshot.png" />
 
 # Opis
 Projekt zaczęty jako niepoważny, który z czasem stał się pół-poważny. Początkowo w założeniu miał to być tylko prosty stoper, 
