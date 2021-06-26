@@ -69,3 +69,4 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 ## Do zrobienia
 
 * Dodanie google translate do tytułu commita
+* Dorzucenie komentarzy do nowych funkcji
