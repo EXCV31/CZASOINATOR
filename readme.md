@@ -30,12 +30,12 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 ### 2. Sprawdź dzisiejsze postępy - Przydatne na daily
 
 * Wykonanie zapytania o wszystkie rekordy z dzisiaj
-* Wyświetlenie rekordów lub komunikatu o braku rekordów w bazie
+* Wyświetlenie rekordów z rozróżnieniem przed/po daily lub komunikatu o braku rekordów w bazie
 
 ### 3. Sprawdź wczorajsze postępy - Przydatne na daily
 * Rozpoznanie dnia - uruchomiony w poniedziałek pokaże rekordy z piątku
 * W przeciwnym razie pokaże wczorajsze
-* Wyświetlenie rekordów lub komunikatu o braku rekordów w bazie
+* Wyświetlenie rekordów z rozróżnieniem przed/po daily lub komunikatu o braku rekordów w bazie
 
 ### 4. Dorzuć ręcznie czas do zadania 
 
@@ -61,10 +61,10 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 ## Użycie
 
 ### Do instalacji:
-* pip install python-redmine lub pip install -r requirements.txt
+* pip install -r requirements.txt
 
 ### Do wypełnienia:
-* W kodzie istnieją dwie hard-coded zmienne - adres Redmine oraz API key. Do działania programu trzeba je wypełnić, reszta powinna działać.
+* config.ini - adres redmine z początkiem http, klucz api oraz godzina daily w formacie hh:mm:ss
 
 ## Do zrobienia
 
