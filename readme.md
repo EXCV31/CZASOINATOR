@@ -68,7 +68,4 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 
 ## Do zrobienia
 
-* Lepsze zabezpieczenie programu przez błędnymi inputami i połączeniami
-* Zaimplementowanie configu
-* Dodanie funkcjonalności podziału "wczorajszych" zadań godzinowo - np przed 11:00 i po 11:00 (przed i po daily), można to wrzucić do config.ini wyżej
-* Refaktoryzacja get_started() - powtórzony kod odnośnie wyboru
+* Dodanie google translate do tytułu commita
