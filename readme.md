@@ -71,3 +71,5 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 * Dodanie google translate do tytułu commita
 * Dorzucenie komentarzy do nowych funkcji
 * Jakieś zabezpieczenie przed wyjściem, łapanie sigkill/sigabort?
+* Program buguje się po wpisaniu "?"
+* Dodać jakieś ładne spacery między wynikami z sqlite3
