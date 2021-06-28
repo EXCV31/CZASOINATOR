@@ -69,8 +69,5 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 ## Do zrobienia
 
 * Dodanie google translate do tytułu commita
-* Dorzucenie komentarzy do nowych funkcji
-* Jakieś zabezpieczenie przed wyjściem, łapanie sigkill/sigabort?
-* Program buguje się po wpisaniu "?"
 * Dodać jakieś ładne spacery między wynikami z sqlite3
-* Bardziej żywy komunikat o rozpoczęciu mierzenia czasu
+* Sprawdzić możliwość renderowania kolorów w panelach

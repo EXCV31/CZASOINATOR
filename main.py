@@ -20,6 +20,7 @@ console = Console()
 
 
 def get_time():
+    # Get and format current date
     now = datetime.datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -32,12 +33,14 @@ def get_time():
         yesterday = now - datetime.timedelta(days=1)
         yesterday = str(yesterday).split(" ")[0]
 
+    # Split current time from 2021-12-10 22:32:52 to 2021-12-10
     today = current_time.split(" ")[0]
 
     return current_time, yesterday, today
 
 
 def init():
+    # Set configparser, read config and setup redmine_conf variable
     config = configparser.ConfigParser()
     config.read("config.ini")
     redmine_conf = config['REDMINE']
@@ -64,9 +67,8 @@ def get_started(redmine_conf):
         # Turn off info after showing legend once.
         info = True
 
-    else:
-        # Ask user to choose a module
-        choose = input("\nWybór > ")
+    # Ask user to choose a module
+    choose = input("\nWybór > ")
     # Make a connection to Redmine.
     redmine = Redmine(redmine_conf["ADDRESS"], key=redmine_conf["API_KEY"])
     # Set up sqlite
@@ -91,65 +93,58 @@ def issue_stopwatch(redmine, cursor, conn):
     try:
         issue_name = str(redmine.issue.get(issue_id))
     except redminelib.exceptions.ForbiddenError:
-        print("", Panel(Text(f"\n403 - Brak dostępu do wybranego zadania!\n", justify="center"),
+        print("", Panel(Text(f"\n403 - Brak dostępu do wybranego zadania!\n", justify="center", style="bold red"),
                         title="[bold orange3]CZASOINATOR"))
         return
     except redminelib.exceptions.ResourceNotFoundError:
-        print(Panel(Text(f"\n404 - Wybrane zadanie nie istnieje!\n", justify="center"),
+        print(Panel(Text(f"\n404 - Wybrane zadanie nie istnieje!\n", justify="center", style="bold red"),
                     title="[bold orange3]CZASOINATOR"))
         return
 
     # Show rich panel
-    print("", Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center"), title="[bold orange3]CZASOINATOR"),
-          "")
+    print("", Panel(Text(f"\nWybrano zadanie: {issue_name}\n\n{console.print('[bold blue]Rozpoczęto mierzenie czasu![/bold blue]')}\n", justify="center"), title="[bold orange3]CZASOINATOR"), "")
 
-    question = input("Kontynuować? t/n > ")
+    # Wait for input
+    while stop != "k":
+        stop = console.input('Gdy zakończysz pracę nad zadaniem wpisz [bold green]k[/bold green], lub [bold red]x[/bold red] aby anulować > ')
+        if stop.lower() == "x":
+            return
 
-    if question.lower() == "t":
+    # Stop stopwatch and calculate timestamp to hours eg. 2.63
+    stop_timestamp = int(calendar.timegm(time.gmtime()))
+    time_elapsed = round(((stop_timestamp - start_timestamp) / 60 / 60), 2)
 
-        # Show rich panelimport redminelib.exceptions"
-        Panel(Text(f"Rozpoczęto mierzenie czasu dla zadania #{issue_id}", justify="center"),
-              title="[bold orange3]CZASOINATOR")
+    # Show rich panel
+    print("", Panel(
+        Text(f"\nZakończono pracę nad #{issue_id}!\n Spędzony czas: {time_elapsed} godzin.\n ", justify="center"),
+        title="[bold orange3]CZASOINATOR"))
 
-        # Wait for input
-        while stop != "k":
-            stop = input("\nGdy zakończysz pracę nad zadaniem wpisz \"k\" > ")
+    comment = input("\nDodaj komentarz > ")
 
-        # Stop stopwatch and calculate timestamp to hours eg. 2.63
-        stop_timestamp = int(calendar.timegm(time.gmtime()))
-        time_elapsed = round(((stop_timestamp - start_timestamp) / 60 / 60), 2)
+    if input("Dodać czas do zadania w redmine? t/n > ").lower() == "t":
 
-        # Show rich panel
-        print("", Panel(
-            Text(f"\nZakończono pracę nad #{issue_id}!\n Spędzony czas: {time_elapsed} godzin.\n ", justify="center"),
-            title="[bold orange3]CZASOINATOR"))
+        # Catch problems with connection, permissions etc.
+        try:
+            redmine.time_entry.create(issue_id=issue_id, spent_on=date.today(),
+                                      hours=time_elapsed, activity_id=8, comments=comment)
 
-        comment = input("\nDodaj komentarz > ")
+            # Show rich panel
+            print("", Panel(Text(f"\nDodano!"
+                                 f"\n\nSpędzony czas: {time_elapsed}"
+                                 f"\nKomentarz: {comment}\n"
+                                 f"\nPamiętaj o git commit -m \"TASK#{issue_id}: {comment}\" && git push",
+                                 justify="center"), title="[bold orange3]CZASOINATOR"))
+        except Exception as e:
+            print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
 
-        if input("Dodać czas do zadania w redmine? t/n > ").lower() == "t":
+    current_time, _, _ = get_time()
 
-            # Catch problems with connection, permissions etc.
-            try:
-                redmine.time_entry.create(issue_id=issue_id, spent_on=date.today(),
-                                          hours=time_elapsed, activity_id=8, comments=comment)
+    # Insert user work to database
+    cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
+                   f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, time_elapsed, comment))
 
-                # Show rich panel
-                print("", Panel(Text(f"\nDodano!"
-                                     f"\n\nSpędzony czas: {time_elapsed}"
-                                     f"\nKomentarz: {comment}\n"
-                                     f"\nPamiętaj o git commit -m \"TASK#{issue_id}: {comment}\" && git push",
-                                     justify="center"), title="[bold orange3]CZASOINATOR"))
-            except Exception as e:
-                print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
-
-        current_time, _, _ = get_time()
-
-        # Insert user work to database
-        cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
-                       f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, time_elapsed, comment))
-
-        # Apply changes and close connection to sqlite database
-        conn.commit()
+    # Apply changes and close connection to sqlite database
+    conn.commit()
 
 
 def show_work_today(cursor, redmine_conf):
@@ -313,7 +308,7 @@ def add_manually_to_database(redmine, cursor):
               Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center"), title="[bold orange3]CZASOINATOR"))
 
         question = input("\nKontynuować? t/n > ")
-    except exception as e:
+    except Exception as e:
         print(f"Wystąpił błąd przy pobieraniu nazwy zadania - {e}")
 
         return
@@ -327,7 +322,7 @@ def add_manually_to_database(redmine, cursor):
         try:
             redmine.time_entry.create(issue_id=issue_id, spent_on=today,
                                       hours=time_elapsed, activity_id=8, comments=comment)
-        except exception as e:
+        except Exception as e:
             print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
 
         # Insert user work to database.
@@ -394,6 +389,5 @@ if __name__ == "__main__":
             add_own_to_database(cursor)
         if choose == str(6):
             stats(cursor)
-
         if choose == "?":
             info = False
