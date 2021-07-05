@@ -12,6 +12,7 @@ from rich.text import Text
 from rich.color import Color
 from rich.console import Console
 import configparser
+from deep_translator import GoogleTranslator
 
 stop = ""
 choose = 0
@@ -55,7 +56,7 @@ def get_started(redmine_conf):
     if not info:
 
         # Show rich panel
-        print(Panel(Text("\nCZASOINATOR - Wybierz co chcesz zrobić:\n"
+        print(Panel(Text("\nWybierz co chcesz zrobić:\n"
                          "\n1. Uruchom zliczanie czasu"
                          "\n2. Sprawdź dzisiejsze postępy"
                          "\n3. Sprawdź wczorajsze postępy"
@@ -128,11 +129,14 @@ def issue_stopwatch(redmine, cursor, conn):
             redmine.time_entry.create(issue_id=issue_id, spent_on=date.today(),
                                       hours=time_elapsed, activity_id=8, comments=comment)
 
+            # Translate comment from user input above
+            translated_comment = GoogleTranslator(source="auto", target="en").translate("Brązowy lis przeskoczył płot")
+
             # Show rich panel
             print("", Panel(Text(f"\nDodano!"
                                  f"\n\nSpędzony czas: {time_elapsed}"
                                  f"\nKomentarz: {comment}\n"
-                                 f"\nPamiętaj o git commit -m \"TASK#{issue_id}: {comment}\" && git push",
+                                 f"\nPamiętaj o git commit -m \"TASK#{issue_id}: {translated_comment}\" && git push",
                                  justify="center"), title="[bold orange3]CZASOINATOR"))
         except Exception as e:
             print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
