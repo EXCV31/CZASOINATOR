@@ -68,6 +68,4 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 
 ## Do zrobienia
 
-* Dodanie google translate do tytułu commita
-* Dodać jakieś ładne spacery między wynikami z sqlite3
-* Sprawdzić możliwość renderowania kolorów w panelach
+* Implementacja tabeli dla wyników z SQLITE3 z podziałem przed/po daily w samej tabeli
