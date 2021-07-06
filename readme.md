@@ -4,6 +4,8 @@
 
 # Zrzuty ekranu:
 <img align="left" title="W sumie całkiem fajne to wyszło" src="https://raw.githubusercontent.com/EXCV31/CZASOINATOR/main/screenshot.png" />
+⠀
+⠀
 <img align="left" title="W sumie całkiem fajne to wyszło" src="https://raw.githubusercontent.com/EXCV31/CZASOINATOR/main/screenshot2.png" />
 
 # Opis:
