@@ -13,8 +13,7 @@ Projekt zaczęty jako niepoważny, który z czasem stał się pół-poważny. Po
 potem miała być to aplikacja okienkowa, jednak nie znalazłem chęci do tworzenia GUI - więc skończyła jako pseudogui w konsoli.
 
 CZASOINATOR - Jest to prosty program do śledzenia swojej aktywności w Redmine. Programu nie mam zamiaru tłumaczyć na język angielski, 
-dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymrużeniem oka. Z racji że narzędzie było pisane na szybko w czasie wolnym, 
-nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami użytkownika/połączeń.
+dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymrużeniem oka. Narzędzie testowane i używane na systemie Linux, jednak na Windows oraz MacOS powinno działać bez problemu.
 
 ## Funkcje:
 
