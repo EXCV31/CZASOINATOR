@@ -2,9 +2,11 @@
 
 Śledź swoje postępy przy zadaniach w Redmine z CZASOINATOREM!
 
+# Zrzuty ekranu:
 <img align="left" title="W sumie całkiem fajne to wyszło" src="https://raw.githubusercontent.com/EXCV31/CZASOINATOR/main/screenshot.png" />
+<img align="left" title="W sumie całkiem fajne to wyszło" src="https://raw.githubusercontent.com/EXCV31/CZASOINATOR/main/screenshot2.png" />
 
-# Opis
+# Opis:
 Projekt zaczęty jako niepoważny, który z czasem stał się pół-poważny. Początkowo w założeniu miał to być tylko prosty stoper, 
 potem miała być to aplikacja okienkowa, jednak nie znalazłem chęci do tworzenia GUI - więc skończyła jako pseudogui w konsoli.
 
@@ -58,14 +60,10 @@ nie zostało ono zbyt dokładnie przetestowane i zabezpieczone przed błędami u
 * Obrobienie pobranych danych
 * Wyświetlenie ilości przepracowanych ogółem godzin w bazie
 
-## Użycie
+## Użycie:
 
 ### Do instalacji:
 * pip install -r requirements.txt
 
 ### Do wypełnienia:
 * config.ini - adres redmine z początkiem http, klucz api oraz godzina daily w formacie hh:mm:ss
-
-## Do zrobienia
-
-* Implementacja tabeli dla wyników z SQLITE3 z podziałem przed/po daily w samej tabeli
