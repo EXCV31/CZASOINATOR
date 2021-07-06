@@ -222,7 +222,7 @@ def show_work(cursor, redmine_conf, day):
         # Split row with date: 24-11-2021 14:20:52 -> 14:20:52
         # Drop ":" from splitted data above, and compare it with daily variable
         # Also check if "daily lines" are displayed before
-        if row[0].split(" ")[1].replace(":", "") > daily and info_daily is not False:
+        if row[0].split(" ")[1].replace(":", "") > daily and info_daily is False:
             table.add_row(f'{day} {redmine_conf["DAILY"]}', '[bold #ff00ee]Daily![/bold #ff00ee]', '', '',
                           f'')
             info_daily = True
