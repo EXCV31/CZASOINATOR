@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.color import Color
 from rich.console import Console
+from rich.table import Table
 import configparser
 from deep_translator import GoogleTranslator
 
@@ -18,6 +19,27 @@ stop = ""
 choose = 0
 info = False
 console = Console()
+
+
+def throw_403():
+    print("")
+    print(Panel(Text(f"\n403 - Brak dostępu do wybranego zadania!\n", justify="center", style="bold #ff4242"),
+                title="[bold orange3]CZASOINATOR"))
+    return
+
+
+def invalid_time_value():
+    print("")
+    print(Panel(Text(f"\nNieprawidłowa wartość dla pola: Spędzony czas\n", justify="center", style="bold #ff4242"),
+                title="[bold orange3]CZASOINATOR"))
+    return
+
+
+def throw_404():
+    print("")
+    print(Panel(Text(f"\n404 - Wybrane zadanie nie istnieje!\n", justify="center", style="bold #ff4242"),
+                title="[bold orange3]CZASOINATOR"))
+    return
 
 
 def get_time():
@@ -54,7 +76,6 @@ def get_started(redmine_conf):
     global info
     # Info variable is being used to show user a legend of possible options.
     if not info:
-
         # Show rich panel
         print(Panel(Text("\nWybierz co chcesz zrobić:\n"
                          "\n1. Uruchom zliczanie czasu"
@@ -94,20 +115,20 @@ def issue_stopwatch(redmine, cursor, conn):
     try:
         issue_name = str(redmine.issue.get(issue_id))
     except redminelib.exceptions.ForbiddenError:
-        print("", Panel(Text(f"\n403 - Brak dostępu do wybranego zadania!\n", justify="center", style="bold red"),
-                        title="[bold orange3]CZASOINATOR"))
+        throw_403()
         return
     except redminelib.exceptions.ResourceNotFoundError:
-        print(Panel(Text(f"\n404 - Wybrane zadanie nie istnieje!\n", justify="center", style="bold red"),
-                    title="[bold orange3]CZASOINATOR"))
+        throw_404()
         return
 
     # Show rich panel
-    print("", Panel(Text(f"\nWybrano zadanie: {issue_name}\n\n{console.print('[bold blue]Rozpoczęto mierzenie czasu![/bold blue]')}\n", justify="center"), title="[bold orange3]CZASOINATOR"), "")
+    print("", Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center"), title="[bold orange3]CZASOINATOR"),
+          "")
 
     # Wait for input
     while stop != "k":
-        stop = console.input('Gdy zakończysz pracę nad zadaniem wpisz [bold green]k[/bold green], lub [bold red]x[/bold red] aby anulować > ')
+        stop = console.input(
+            '[bold #25ba14]Rozpoczęto mierzenie czasu![/bold #25ba14] \n\nGdy zakończysz pracę nad zadaniem wpisz [bold #25ba14]k[/bold #25ba14], lub [bold #e81313]x[/bold #e81313] aby anulować > ')
         if stop.lower() == "x":
             return
 
@@ -130,7 +151,7 @@ def issue_stopwatch(redmine, cursor, conn):
                                       hours=time_elapsed, activity_id=8, comments=comment)
 
             # Translate comment from user input above
-            translated_comment = GoogleTranslator(source="auto", target="en").translate("Brązowy lis przeskoczył płot")
+            translated_comment = GoogleTranslator(source="auto", target="en").translate(comment)
 
             # Show rich panel
             print("", Panel(Text(f"\nDodano!"
@@ -151,17 +172,20 @@ def issue_stopwatch(redmine, cursor, conn):
     conn.commit()
 
 
-def show_work_today(cursor, redmine_conf):
+def show_work(cursor, redmine_conf, day):
+    """
+    Some magic happeened here!
+    With user input from get_started() day variable is set to today or yesterday.
+    It's set by choosing in "if __name__ == __main__" by get_time function
+    which returns current time, yesterday and today.
+    """
     # This variable store information about doing anything before daily
     info_daily = False
-    before_daily_counter = 0
-    after_daily_counter = 0
     # Replace 11:00:00 from config.ini to 110000
     daily = redmine_conf["DAILY"].replace(":", "")
-    _, _, today = get_time()
 
     # Send query to get data from today
-    cursor.execute("SELECT * FROM BAZA_DANYCH WHERE DATA LIKE ?", (f"%{today}%",))
+    cursor.execute("SELECT * FROM BAZA_DANYCH WHERE DATA LIKE ?", (f"%{day}%",))
 
     # Fetch data from query above
     rows = cursor.fetchall()
@@ -173,127 +197,53 @@ def show_work_today(cursor, redmine_conf):
 
         return
 
+    # Generate column to show data from sql
+    table = Table(show_header=True, header_style='bold #c071f5',
+                  title=f'[bold #2070b2]POSTĘPY DNIA {day}', show_lines=True)
+    table.add_column("Data rozpoczęcia", justify="center")
+    table.add_column("Nazwa zadania", justify="center")
+    table.add_column("Spędzony czas", justify="center")
+    table.add_column("Komentarz", justify="center")
+    table.add_column("Numer zadania", justify="center")
+
     for row in rows:
+
+        # Set up colors for spent time.
+        # 00:00-02:00 - Green
+        # 02:00-04:00 - Orange
+        # 04:00+ - Red
+        if float(row[3]) <= 2.00:
+            color = "bold #25ba14"  # Green
+        elif float(row[3]) <= 4.00:
+            color = "bold #d99011"  # Orange
+        else:
+            color = "bold #ff4242"  # Red
 
         # Split row with date: 24-11-2021 14:20:52 -> 14:20:52
         # Drop ":" from splitted data above, and compare it with daily variable
         # Also check if "daily lines" are displayed before
-        if row[0].split(" ")[1].replace(":", "") < daily:
-            if before_daily_counter < 1:
-                string = f"\n Postępy dnia {today} - przed daily:\n"
-
-            # row_1 = row[1] is for text-formatting purposes. eg # 20000 or "Brak numeru zadania"
-            row_1 = row[1]
-            if row_1 is None:
-                row_1 = "Brak numeru zadania!"
-            else:
-                row_1 = "# " + row_1
-            string += f"\n\n\n {row_1}" \
-                      f"\n {row[2]}\n" \
-                      f"\n Spędzony czas: {row[3]}h" \
-                      f"\n Komentarz: {row[4]} \n"
+        if row[0].split(" ")[1].replace(":", "") > daily and info_daily is not False:
+            table.add_row(f'{day} {redmine_conf["DAILY"]}', '[bold #ff00ee]Daily![/bold #ff00ee]', '', '',
+                          f'')
             info_daily = True
 
-            before_daily_counter += 1
+        # row_1 = row[1] is for text-formatting purposes. eg # 20000 or "Empty issue number"
+        row_1 = row[1]
 
+        # Same as above, eg 4.86 -> 04:51.
+        time = float(row[3])
+        minutes = 60 * (time % 1)
+        time = "0%d:%02d" % (time, minutes)
+
+        # Append row to table with recognizing that info about work has issue number
+        if row_1 is None:
+            table.add_row(row[0], row[2], f"[{color}]{time}[/{color}]", row[4], f"[bold #ff4242]Brak![/bold #ff4242]")
         else:
-            if info_daily:
-                # Show rich panel with data from "if" above
-                print("", Panel(Text(string, justify="center"), title="[bold orange3]CZASOINATOR"))
-                info_daily = False
+            table.add_row(row[0], row[2], f"[{color}]{time}[/{color}]", row[4],
+                          f"[#6bb0c9][link={redmine_conf['ADDRESS']}/issues/{row[1]}]#{row[1]}[/link][/#6bb0c9]")
 
-            if after_daily_counter < 1:
-                string = f"\n Postępy dnia {today} - po daily:\n"
-
-            # row_1 = row[1] is for text-formatting purposes. eg # 20000 or "Brak numeru zadania"
-            row_1 = row[1]
-            if row_1 is None:
-                row_1 = "Brak numeru zadania!"
-            else:
-                row_1 = "# " + row_1
-            string += f"\n\n\n {row_1}" \
-                      f"\n {row[2]}\n" \
-                      f"\n Spędzony czas: {row[3]}h" \
-                      f"\n Komentarz: {row[4]}\n"
-
-            after_daily_counter += 1
-
-    # Show rich panel
-    print("", Panel(Text(string, justify="center"), title="[bold orange3]CZASOINATOR"))
-
-    # Close connection to database
-    conn.close()
-
-
-def show_work_yesterday(cursor, redmine_conf):
-    # This variable store information about doing anything before daily
-    info_daily = False
-    before_daily_counter = 0
-    after_daily_counter = 0
-    # Replace 11:00:00 from config.ini to 110000
-    daily = redmine_conf["DAILY"].replace(":", "")
-    _, yesterday, _ = get_time()
-
-    # Send query to get data from yesterday
-    cursor.execute("SELECT * FROM BAZA_DANYCH WHERE DATA LIKE ?", (f"%{yesterday}%",))
-
-    # Fetch data from query above
-    rows = cursor.fetchall()
-
-    # Empty rows variable means there's no SQL entries.
-    if not rows:
-        # Show rich panel
-        print("", Panel(Text("\n Brak postępów! \n", justify="center"), title="[bold orange3]CZASOINATOR"))
-
-        return
-
-    for row in rows:
-
-        # Split row with date: 24-11-2021 14:20:52 -> 14:20:52
-        # Drop ":" from splitted data above, and compare it with daily variable
-        # Also check if "daily lines" are displayed before
-        if row[0].split(" ")[1].replace(":", "") < daily:
-            if before_daily_counter < 1:
-                string = f"\n Postępy dnia {yesterday} - przed daily:\n"
-
-            # row_1 = row[1] is for text-formatting purposes. eg # 20000 or "Brak numeru zadania"
-            row_1 = row[1]
-            if row_1 is None:
-                row_1 = "Brak numeru zadania!"
-            else:
-                row_1 = "# " + row_1
-            string += f"\n\n\n {row_1}" \
-                      f"\n {row[2]}\n" \
-                      f"\n Spędzony czas: {row[3]}h" \
-                      f"\n Komentarz: {row[4]} \n"
-            info_daily = True
-
-            before_daily_counter += 1
-
-        else:
-            if info_daily:
-                # Show rich panel with data from "if" above
-                print("", Panel(Text(string, justify="center"), title="[bold orange3]CZASOINATOR"))
-                info_daily = False
-
-            if after_daily_counter < 1:
-                string = f"\n Postępy dnia {yesterday} - po daily:\n"
-
-            # row_1 = row[1] is for text-formatting purposes. eg # 20000 or "Brak numeru zadania"
-            row_1 = row[1]
-            if row_1 is None:
-                row_1 = "Brak numeru zadania!"
-            else:
-                row_1 = "# " + row_1
-            string += f"\n\n\n {row_1}" \
-                      f"\n {row[2]}\n" \
-                      f"\n Spędzony czas: {row[3]}h" \
-                      f"\n Komentarz: {row[4]}\n"
-
-            after_daily_counter += 1
-
-    # Show rich panel
-    print("", Panel(Text(string, justify="center"), title="[bold orange3]CZASOINATOR"))
+    # Show table with work time
+    console.print(table)
 
     # Close connection to database
     conn.close()
@@ -307,22 +257,30 @@ def add_manually_to_database(redmine, cursor):
     try:
         issue_name = str(redmine.issue.get(issue_id))
 
-        # Show rich panel
-        print("",
-              Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center"), title="[bold orange3]CZASOINATOR"))
-
-        question = input("\nKontynuować? t/n > ")
-    except Exception as e:
-        print(f"Wystąpił błąd przy pobieraniu nazwy zadania - {e}")
-
+    except redminelib.exceptions.ForbiddenError:
+        throw_403()
         return
+
+    except redminelib.exceptions.ResourceNotFoundError:
+        throw_404()
+        return
+
+    # Show rich panel
+    print("",
+          Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center"), title="[bold orange3]CZASOINATOR"))
+
+    question = input("\nKontynuować? t/n > ")
 
     if question.lower() == "t":
 
-        time_elapsed = input("\nPodaj czas spędzony nad zadaniem - oddzielony kropką np 2.13 > ")
+        try:
+            time_elapsed = float(input("\nPodaj czas spędzony nad zadaniem - oddzielony kropką np 2.13 > "))
+        except ValueError:
+            invalid_time_value()
+            return
+
         comment = input("Dodaj komentarz > ")
         # Catch problems with connection, permissions etc.
-        print(current_time, today)
         try:
             redmine.time_entry.create(issue_id=issue_id, spent_on=today,
                                       hours=time_elapsed, activity_id=8, comments=comment)
@@ -347,8 +305,11 @@ def add_own_to_database(cursor):
     current_time, _, _ = get_time()
 
     issue_name = input("\nPodaj nazwę zadania > ")
-    time_elapsed = input("Podaj czas spędzony nad zadaniem - oddzielony kropką np 2.13 > ")
-
+    try:
+        time_elapsed = float(input("\nPodaj czas spędzony nad zadaniem - oddzielony kropką np 2.13 > "))
+    except ValueError:
+        invalid_time_value()
+        return
     # Insert user work to database.
     cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NAZWA_ZADANIA, SPEDZONY_CZAS) VALUES "
                    f"(?, ?, ?)", (current_time, issue_name, time_elapsed,))
@@ -384,9 +345,11 @@ if __name__ == "__main__":
         if choose == str(1):
             issue_stopwatch(redmine, cursor, conn)
         if choose == str(2):
-            show_work_today(cursor, redmine_conf)
+            _, _, day = get_time()
+            show_work(cursor, redmine_conf, day)
         if choose == str(3):
-            show_work_yesterday(cursor, redmine_conf)
+            _, day, _ = get_time()
+            show_work(cursor, redmine_conf, day)
         if choose == str(4):
             add_manually_to_database(redmine, cursor)
         if choose == str(5):
