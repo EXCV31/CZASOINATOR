@@ -128,7 +128,7 @@ def issue_stopwatch(redmine, cursor, conn):
     # Wait for input
     while stop != "k":
         stop = console.input(
-            '[bold #25ba14]Rozpoczęto mierzenie czasu![/bold #25ba14] \n\nGdy zakończysz pracę nad zadaniem wpisz [bold #25ba14]k[/bold #25ba14], lub [bold #e81313]x[/bold #e81313] aby anulować > ')
+            '[bold #25ba14]Rozpoczęto mierzenie czasu![/bold #25ba14] \n\nGdy zakończysz pracę nad zadaniem wpisz [bold #25ba14]k[/bold #25ba14], lub [bold #ff4242]x[/bold #ff4242] aby anulować > ')
         if stop.lower() == "x":
             return
 
