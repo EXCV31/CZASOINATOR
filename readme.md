@@ -63,6 +63,7 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 ## Do zrobienia:
 * Dodanie funkcjonalności komentowania do kroku nr 5 - dodanie własnego zadania do bazy.
+* Refaktoryzacja wg Pep8
 
 ## Użycie:
 
@@ -76,3 +77,11 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * DAILY= Godzina daily w formacie HH:MM:SS
 * EXCLUDE= Opcjonalnie - Które projekty ominąć przy listowaniu zadań należących do użytkownika, oddzielone przecinkiem
 * INSTANCE= Opcjonalnie - Na której instacji aktualnie pracujemy, może służyć także jako nazwa firmy wyświetlana po uruchomieniu programu na belce
+
+# Przykładowe wypełnienie:
+[REDMINE]
+ADDRESS=http://demo.redmine.org
+API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416
+DAILY=11:00:00
+EXCLUDE=Samochody
+INSTANCE=DEV/Stage
