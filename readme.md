@@ -61,6 +61,9 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * Obrobienie pobranych danych
 * Wyświetlenie ilości przepracowanych ogółem godzin w bazie
 
+## Do zrobienia:
+* Dodanie wyświetlania zadań przypisanych do danego usera, można pomyśleć nad filtrowaniem po projekcie którego nazwa != xxxxx.
+
 ## Użycie:
 
 ### Do instalacji:
