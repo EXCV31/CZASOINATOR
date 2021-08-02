@@ -336,9 +336,10 @@ def add_own_to_database(cursor):
     except ValueError:
         invalid_time_value()
         return
+    comment = input("\n Dodaj komentarz > ")
     # Insert user work to database.
-    cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NAZWA_ZADANIA, SPEDZONY_CZAS) VALUES "
-                   f"(?, ?, ?)", (current_time, issue_name, time_elapsed,))
+    cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
+                   f"(?, ?, ?, ?)", (current_time, issue_name, time_elapsed, comment,))
 
     # Apply changes and close connection to sqlite database.
     conn.commit()
