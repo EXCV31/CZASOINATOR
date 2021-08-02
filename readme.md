@@ -62,7 +62,7 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * Wyświetlenie ilości przepracowanych ogółem godzin w bazie
 
 ## Do zrobienia:
-* Dodanie wyświetlania zadań przypisanych do danego usera, można pomyśleć nad filtrowaniem po projekcie którego nazwa != xxxxx.
+* Dodanie funkcjonalności komentowania do kroku nr 5 - dodanie własnego zadania do bazy.
 
 ## Użycie:
 
@@ -70,4 +70,9 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * pip install -r requirements.txt
 
 ### Do wypełnienia:
-* config.ini - adres redmine z początkiem http, klucz api oraz godzina daily w formacie hh:mm:ss
+# Config.ini:
+* ADDRESS= Adres redmine
+* API_KEY= Klucz API
+* DAILY= Godzina daily w formacie HH:MM:SS
+* EXCLUDE= Opcjonalnie - Które projekty ominąć przy listowaniu zadań należących do użytkownika, oddzielone przecinkiem
+* INSTANCE= Opcjonalnie - Na której instacji aktualnie pracujemy, może służyć także jako nazwa firmy wyświetlana po uruchomieniu programu na belce
