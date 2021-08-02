@@ -58,7 +58,6 @@ def throw_404():
     return
 
 
-
 def get_time():
     # Get and format current date
     now = datetime.datetime.now()
@@ -386,7 +385,7 @@ def show_assigned_to_user(redmine, redmine_conf):
             priority_color = get_color("red")
 
         # Color matching by % of completion
-        if issue.done_ratio >= 66 :
+        if issue.done_ratio >= 66:
             done_color = get_color("green")
         elif issue.done_ratio >= 33:
             done_color = get_color("orange")
