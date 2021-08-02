@@ -21,25 +21,42 @@ info = False
 console = Console()
 
 
+def get_color(color):
+    if color == "red":
+        return "bold #ff4242"
+    if color == "orange":
+        return "bold #d99011"
+    if color == "green":
+        return "bold #25ba14"
+    if color == "purple":
+        return "bold #c071f5"
+    if color == "pink":
+        return "bold #ff00ee"
+    if color == "light_blue":
+        return "#6bb0c9"
+    if color == "blue":
+        return "bold #2070b2"
+
 def throw_403():
     print("")
-    print(Panel(Text(f"\n403 - Brak dostępu do wybranego zadania!\n", justify="center", style="bold #ff4242"),
+    print(Panel(Text(f"\n403 - Brak dostępu do wybranego zadania!\n", justify="center", style=get_color("red")),
                 title="[bold orange3]CZASOINATOR"))
     return
 
 
 def invalid_time_value():
     print("")
-    print(Panel(Text(f"\nNieprawidłowa wartość dla pola: Spędzony czas\n", justify="center", style="bold #ff4242"),
+    print(Panel(Text(f"\nNieprawidłowa wartość dla pola: Spędzony czas\n", justify="center", style=get_color("red")),
                 title="[bold orange3]CZASOINATOR"))
     return
 
 
 def throw_404():
     print("")
-    print(Panel(Text(f"\n404 - Wybrane zadanie nie istnieje!\n", justify="center", style="bold #ff4242"),
+    print(Panel(Text(f"\n404 - Wybrane zadanie nie istnieje!\n", justify="center", style=get_color("red")),
                 title="[bold orange3]CZASOINATOR"))
     return
+
 
 
 def get_time():
@@ -74,6 +91,14 @@ def init():
 def get_started(redmine_conf):
     global choose
     global info
+
+    # Check if INSTANCE key in config.ini is filled. If not, app shows only title,
+    # without instance. Can be also used also as company name, own text or something.
+    if redmine_conf["INSTANCE"] == "":
+        frame_title = "[bold orange3]CZASOINATOR[/bold orange3]"
+    else:
+        frame_title = f"[bold orange3]CZASOINATOR[/bold orange3] - [bold red]{redmine_conf['INSTANCE']}"
+
     # Info variable is being used to show user a legend of possible options.
     if not info:
         # Show rich panel
@@ -83,8 +108,9 @@ def get_started(redmine_conf):
                          "\n3. Sprawdź wczorajsze postępy"
                          "\n4. Dorzuć ręcznie czas do zadania"
                          "\n5. Dorzuć ręcznie czas do bazy - własne zadanie"
-                         "\n6. Statystyki"
-                         "\n7. Wyjście\n", justify="center"), title="[bold orange3]CZASOINATOR"))
+                         "\n6. Sprawdź zadania przypisane do Ciebie"
+                         "\n7. Statystyki"
+                         "\n8. Wyjście\n", justify="center"), title=frame_title))
 
         # Turn off info after showing legend once.
         info = True
@@ -128,7 +154,7 @@ def issue_stopwatch(redmine, cursor, conn):
     # Wait for input
     while stop != "k":
         stop = console.input(
-            '[bold #25ba14]Rozpoczęto mierzenie czasu![/bold #25ba14] \n\nGdy zakończysz pracę nad zadaniem wpisz [bold #25ba14]k[/bold #25ba14], lub [bold #ff4242]x[/bold #ff4242] aby anulować > ')
+            f'[{get_color("green")}]Rozpoczęto mierzenie czasu![/{get_color("green")}] \n\nGdy zakończysz pracę nad zadaniem wpisz [{get_color("green")}]k[/{get_color("green")}], lub [{get_color("red")}]x[/{get_color("red")}] aby anulować > ')
         if stop.lower() == "x":
             return
 
@@ -157,7 +183,7 @@ def issue_stopwatch(redmine, cursor, conn):
             print("", Panel(Text(f"\nDodano!"
                                  f"\n\nSpędzony czas: {time_elapsed}"
                                  f"\nKomentarz: {comment}\n"
-                                 f"\nPamiętaj o git commit -m \"TASK#{issue_id}: {translated_comment}\" && git push",
+                                 f"\nPamiętaj o git commit -m \"TASK#{issue_id}: {translated_comment}\" && git push\n",
                                  justify="center"), title="[bold orange3]CZASOINATOR"))
         except Exception as e:
             print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
@@ -198,8 +224,8 @@ def show_work(cursor, redmine_conf, day):
         return
 
     # Generate column to show data from sql
-    table = Table(show_header=True, header_style='bold #c071f5',
-                  title=f'[bold #2070b2]POSTĘPY DNIA {day}', show_lines=True)
+    table = Table(show_header=True, header_style=get_color("purple"),
+                  title=f'[{get_color("blue")}]POSTĘPY DNIA {day}', show_lines=True)
     table.add_column("Data rozpoczęcia", justify="center")
     table.add_column("Nazwa zadania", justify="center")
     table.add_column("Spędzony czas", justify="center")
@@ -213,17 +239,17 @@ def show_work(cursor, redmine_conf, day):
         # 02:00-04:00 - Orange
         # 04:00+ - Red
         if float(row[3]) <= 2.00:
-            color = "bold #25ba14"  # Green
+            color = get_color("green")
         elif float(row[3]) <= 4.00:
-            color = "bold #d99011"  # Orange
+            color = get_color("orange")
         else:
-            color = "bold #ff4242"  # Red
+            color = get_color("red")
 
         # Split row with date: 24-11-2021 14:20:52 -> 14:20:52
         # Drop ":" from splitted data above, and compare it with daily variable
         # Also check if "daily lines" are displayed before
         if row[0].split(" ")[1].replace(":", "") > daily and info_daily is False:
-            table.add_row(f'{day} {redmine_conf["DAILY"]}', '[bold #ff00ee]Daily![/bold #ff00ee]', '', '',
+            table.add_row(f'{day} {redmine_conf["DAILY"]}', f'[{get_color("pink")}]Daily![/{get_color("pink")}]', '', '',
                           f'')
             info_daily = True
 
@@ -237,10 +263,10 @@ def show_work(cursor, redmine_conf, day):
 
         # Append row to table with recognizing that info about work has issue number
         if row_1 is None:
-            table.add_row(row[0], row[2], f"[{color}]{time}[/{color}]", row[4], f"[bold #ff4242]Brak![/bold #ff4242]")
+            table.add_row(row[0], row[2], f"[{color}]{time}[/{color}]", row[4], f"[{get_color('red')}]Brak![/{get_color('red')}]")
         else:
             table.add_row(row[0], row[2], f"[{color}]{time}[/{color}]", row[4],
-                          f"[#6bb0c9][link={redmine_conf['ADDRESS']}/issues/{row[1]}]#{row[1]}[/link][/#6bb0c9]")
+                          f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{row[1]}]#{row[1]}[/link][/{get_color('light_blue')}]")
 
     # Show table with work time
     console.print(table)
@@ -324,6 +350,63 @@ def add_own_to_database(cursor):
                          f"\nSpędzony czas: {time_elapsed}\n", justify="center"), title="[bold orange3]CZASOINATOR"))
 
 
+def show_assigned_to_user(redmine, redmine_conf):
+    # "total" variable is used to represent hours spent on each issue.
+    total = 0
+
+    # Get user ID from redmine by api key
+    user = redmine.user.get('current')
+    user_name = str(user)
+    user_id = user["id"]
+
+    # Filter issues with "open" status assigned to use, excluding groups.
+    issues = redmine.issue.filter(assigned_to_id=user_id)
+
+    # Generate column to show data from redmine
+    table = Table(show_header=True, header_style=get_color("purple"),
+                  title=f'[{get_color("blue")}]Zadania przypisane do: {user_name}, ID: {user_id}', show_lines=True)
+    table.add_column("Nazwa zadania", justify="center")
+    table.add_column("% ukończenia", justify="center")
+    table.add_column("Spędzony czas", justify="center")
+    table.add_column("Priorytet", justify="center")
+    table.add_column("Numer zadania", justify="center")
+
+    for issue in issues:
+        # Skip project name if any mentioned in config.ini
+        if issue.project["name"] in [redmine_conf["EXCLUDE"]]:
+            continue
+
+        # Color matching by priority
+        if str(issue.priority) == "Niski":
+            priority_color = get_color("green")
+        elif str(issue.priority) == "Normalny":
+            priority_color = get_color("orange")
+        else:
+            priority_color = get_color("red")
+
+        # Color matching by % of completion
+        if issue.done_ratio >= 66 :
+            done_color = get_color("green")
+        elif issue.done_ratio >= 33:
+            done_color = get_color("orange")
+        else:
+            done_color = get_color("red")
+
+        # Get data about hours worked and put in total variable
+        for time in issue.time_entries:
+            info = redmine.time_entry.get(time)
+            total += info.hours
+
+        # Add a row to the table to display it after data collection
+        table.add_row(issue.subject, f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", f"{str(round(total, 2))}", f"[{priority_color}]{issue.priority}[/{priority_color}]",
+                      f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
+
+        # Reset variable for next issue
+        total = 0
+
+    # Show table with issues
+    console.print(table)
+
 def stats(cursor):
     cursor.execute("SELECT SPEDZONY_CZAS FROM BAZA_DANYCH")
     rows = cursor.fetchall()
@@ -340,7 +423,7 @@ def stats(cursor):
 
 if __name__ == "__main__":
     redmine_conf = init()
-    while choose != str(7):
+    while choose != str(8):
         redmine, cursor, choose, conn = get_started(redmine_conf)
         if choose == str(1):
             issue_stopwatch(redmine, cursor, conn)
@@ -355,6 +438,8 @@ if __name__ == "__main__":
         if choose == str(5):
             add_own_to_database(cursor)
         if choose == str(6):
+            show_assigned_to_user(redmine, redmine_conf)
+        if choose == str(7):
             stats(cursor)
         if choose == "?":
             info = False
