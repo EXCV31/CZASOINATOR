@@ -62,8 +62,7 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * Wyświetlenie ilości przepracowanych ogółem godzin w bazie
 
 ## Do zrobienia:
-* Dodanie funkcjonalności komentowania do kroku nr 5 - dodanie własnego zadania do bazy.
-* Refaktoryzacja wg Pep8
+* Dodanie typu zadania np user story, spike story, do punktu 6.
 
 ## Użycie:
 
