@@ -79,8 +79,13 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 # Przykładowe wypełnienie:
 [REDMINE]
+
 ADDRESS=http://demo.redmine.org
+
 API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416
+
 DAILY=11:00:00
+
 EXCLUDE=Samochody
+
 INSTANCE=DEV/Stage
