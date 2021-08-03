@@ -63,7 +63,8 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 ## Do zrobienia:
 * Dodanie typu zadania np user story, spike story, do punktu 6.
-
+* Sprawdzenie czy jest możliwość pobierania z API ogólnie spędzonego czasu nad zadaniem, tyczy się to user story z podrzędnymi.
+* Sprawdzenie jak program zachowuje się z punktem 6. w przypadku braku zadań przypisanych do niego.
 ## Użycie:
 
 ### Do instalacji:
