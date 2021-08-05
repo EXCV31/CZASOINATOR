@@ -365,47 +365,53 @@ def show_assigned_to_user(redmine, redmine_conf):
     # Generate column to show data from redmine
     table = Table(show_header=True, header_style=get_color("purple"),
                   title=f'[{get_color("blue")}]Zadania przypisane do: {user_name}, ID: {user_id}', show_lines=True)
+    table.add_column("Typ zadania", justify="center")
     table.add_column("Nazwa zadania", justify="center")
+    table.add_column("Priorytet", justify="center")
     table.add_column("% ukończenia", justify="center")
     table.add_column("Spędzony czas", justify="center")
-    table.add_column("Priorytet", justify="center")
     table.add_column("Numer zadania", justify="center")
+    if len(issues) > 0:
 
-    for issue in issues:
-        # Skip project name if any mentioned in config.ini
-        if issue.project["name"] in [redmine_conf["EXCLUDE"]]:
-            continue
+        for issue in issues:
 
-        # Color matching by priority
-        if str(issue.priority) == "Niski":
-            priority_color = get_color("green")
-        elif str(issue.priority) == "Normalny":
-            priority_color = get_color("orange")
-        else:
-            priority_color = get_color("red")
+            # Skip project name if any mentioned in config.ini
+            if issue.project["name"] in [redmine_conf["EXCLUDE"]]:
+                continue
 
-        # Color matching by % of completion
-        if issue.done_ratio >= 66:
-            done_color = get_color("green")
-        elif issue.done_ratio >= 33:
-            done_color = get_color("orange")
-        else:
-            done_color = get_color("red")
+            # Color matching by priority
+            if str(issue.priority) == "Niski":
+                priority_color = get_color("green")
+            elif str(issue.priority) == "Normalny":
+                priority_color = get_color("orange")
+            else:
+                priority_color = get_color("red")
 
-        # Get data about hours worked and put in total variable
-        for time in issue.time_entries:
-            info = redmine.time_entry.get(time)
-            total += info.hours
+            # Color matching by % of completion
+            if issue.done_ratio >= 66:
+                done_color = get_color("green")
+            elif issue.done_ratio >= 33:
+                done_color = get_color("orange")
+            else:
+                done_color = get_color("red")
 
-        # Add a row to the table to display it after data collection
-        table.add_row(issue.subject, f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", f"{str(round(total, 2))}", f"[{priority_color}]{issue.priority}[/{priority_color}]",
-                      f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
+            # Get data about hours worked and put in total variable
+            for time in issue.time_entries:
+                info = redmine.time_entry.get(time)
+                total += info.hours
 
-        # Reset variable for next issue
-        total = 0
+            # Add a row to the table to display it after data collection
+            table.add_row(f"{issue.tracker['name']}", f"{issue.subject}", f"[{priority_color}]{issue.priority}[/{priority_color}]", f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", f"{str(round(total, 2))}",
+                          f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
 
-    # Show table with issues
-    console.print(table)
+            # Reset variable for next issue
+            total = 0
+
+        # Show table with issues
+        console.print(table)
+    else:
+        print("", Panel(Text(f"\nBrak zadań przypisanych do: {user_name}!\n", justify="center", style=get_color("red")),
+                    title="[bold orange3]CZASOINATOR"))
 
 def stats(cursor):
     cursor.execute("SELECT SPEDZONY_CZAS FROM BAZA_DANYCH")
