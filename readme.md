@@ -8,14 +8,14 @@
 ⠀
 <img align="left" title="W sumie całkiem fajne to wyszło" src="https://raw.githubusercontent.com/EXCV31/CZASOINATOR/main/screenshot2.png" />
 
-# Opis:
+## Opis
 Projekt zaczęty jako niepoważny, który z czasem stał się pół-poważny. Początkowo w założeniu miał to być tylko prosty stoper, 
 potem miała być to aplikacja okienkowa, jednak nie znalazłem chęci do tworzenia GUI - więc skończyła jako pseudogui w konsoli.
 
 CZASOINATOR - Jest to prosty program do śledzenia swojej aktywności w Redmine. Programu nie mam zamiaru tłumaczyć na język angielski, 
 dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymrużeniem oka. Narzędzie testowane i używane na systemie Linux, jednak na Windows oraz MacOS powinno działać bez problemu.
 
-## Funkcje:
+## Funkcje
 
 ### 1. Uruchom zliczanie czasu - Uruchom stoper, popracuj trochę, zatrzymaj. Po wszystkim CZASOINATOR wrzuci Twoje postępy do Redmine!
 
@@ -46,7 +46,7 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * Odpytanie o wszystkie rekordy z bazy danych, zsumowanie czasu i przedstawienie użytkownikowi.
 
 
-## Użycie:
+## Użycie
 
 ### Do instalacji:
 * pip install -r requirements.txt
