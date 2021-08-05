@@ -19,74 +19,51 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 ### 1. Uruchom zliczanie czasu - Uruchom stoper, popracuj trochę, zatrzymaj. Po wszystkim CZASOINATOR wrzuci Twoje postępy do Redmine!
 
-* Pobranie od użytkownika ID zadania w Redmine
-* Pytanie: Czy wybrano poprawne zadanie + pokazanie tytułu zadania
-* Uruchomienie licznika
-* Oczekiwanie na sygnał od użytkownika o chęci zakończenia zliczania
-* Zatrzymanie licznika
-* Pokazanie ilości przepracowanych godzin
-* Pobranie od użytkownika komentarza opisującego postępy
-* Pytanie: Czy chcesz wrzucić przepracowany czas do Redmine?
-  * Dodanie przepracowanego czasu do wskazanego zadania
-* Umieszczenie w bazie: Data, numer zadania, tytuł zadania, przepracowany czas, komentarz
+* Uruchomienie stopera po wpisaniu ID zadania. Po zakończeniu pracy wrzucenie czasu do redmine oraz do lokalnej bazy danych. Jako feature przypominajka o commit/push wraz z przetłumaczonym komentarzem na angielski.
 
 ### 2. Sprawdź dzisiejsze postępy - Przydatne na daily
 
-* Wykonanie zapytania o wszystkie rekordy z dzisiaj
-* Wyświetlenie rekordów z rozróżnieniem przed/po daily lub komunikatu o braku rekordów w bazie
+* Odpytanie bazy danych o rekordy z dnia dzisiejszego. Wyświetlane w formie tabeli.
 
 ### 3. Sprawdź wczorajsze postępy - Przydatne na daily
-* Rozpoznanie dnia - uruchomiony w poniedziałek pokaże rekordy z piątku
-* W przeciwnym razie pokaże wczorajsze
-* Wyświetlenie rekordów z rozróżnieniem przed/po daily lub komunikatu o braku rekordów w bazie
+
+* Odpytanie bazy danych o rekordy z dnia wczorajszego, w przypadku uruchomienia tego w poniedziałek odpytuje 3 dni wstecz (piątek). Wyświetlane w formie tabeli.
 
 ### 4. Dorzuć ręcznie czas do zadania 
 
-* Pobranie od użytkownika ID zadania w Redmine
-* Pytanie: Czy wybrano poprawne zadanie + pokazanie tytułu zadania
-* Pobranie od użytkownika ilości przepracowanych godzin
-* Pobranie od użytkownika komentarza opisującego postępy
-* Dodanie przepracowanego czasu do wskazanego zadania
-* Umieszczenie w bazie: Data, numer zadania, tytuł zadania, przepracowany czas, komentarz
+* Po wpisaniu ID zadania i przepracowanego czasu wrzucenie tego do redmine i lokalnej bazy.
 
 ### 5. Dorzuć ręcznie czas do bazy - własne zadanie - Przydatne na demo, konsultacje i inne
 
-* Pobranie od użytkownika nazwy zadania
-* Pobranie od użytkownika ilości przepracowanych godzin
-* Umieszczenie w bazie: Data, tytuł zadania, przepracowany czas
+* Odpytanie o nazwę zadania, przepracowane godziny oraz komentarz, i wrzucenie tego do lokalnej bazy.
 
-### 6. Statystyki
+### 6. Sprawdź zadania przypisane do Ciebie - gdy nie wiesz czym się zająć
 
-* Wykonanie zapytanie o wszystkie rekordy z kolumny SPEDZONY_CZAS
-* Obrobienie pobranych danych
-* Wyświetlenie ilości przepracowanych ogółem godzin w bazie
+* Odpytanie redmine o zagadnienia przypisane do ID użytkownika - pobierane przez API key. Wyświetlane w formie tabeli. W przypadku braku zadań wyświetlany odpowiedni komunikat. Jako feature dodany jest w configu \[EXCLUDE\], aby pominąć całe trackery których nie chce się wyświetlać.
 
-## Do zrobienia:
-* Dodanie typu zadania np user story, spike story, do punktu 6.
-* Sprawdzenie czy jest możliwość pobierania z API ogólnie spędzonego czasu nad zadaniem, tyczy się to user story z podrzędnymi.
-* Sprawdzenie jak program zachowuje się z punktem 6. w przypadku braku zadań przypisanych do niego.
+### 7. Statystyki
+
+* Odpytanie o wszystkie rekordy z bazy danych, zsumowanie czasu i przedstawienie użytkownikowi.
+
+
 ## Użycie:
 
 ### Do instalacji:
 * pip install -r requirements.txt
 
 ### Do wypełnienia:
-# Config.ini:
+
+#### Config.ini:
 * ADDRESS= Adres redmine
 * API_KEY= Klucz API
 * DAILY= Godzina daily w formacie HH:MM:SS
 * EXCLUDE= Opcjonalnie - Które projekty ominąć przy listowaniu zadań należących do użytkownika, oddzielone przecinkiem
 * INSTANCE= Opcjonalnie - Na której instacji aktualnie pracujemy, może służyć także jako nazwa firmy wyświetlana po uruchomieniu programu na belce
 
-# Przykładowe wypełnienie:
-[REDMINE]
-
-ADDRESS=http://demo.redmine.org
-
-API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416
-
-DAILY=11:00:00
-
-EXCLUDE=Samochody
-
-INSTANCE=DEV/Stage
+#### Przykładowe wypełnienie:
+* [REDMINE]
+* ADDRESS=http://demo.redmine.org
+* API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416
+* DAILY=11:00:00
+* EXCLUDE=Samochody
+* INSTANCE=DEV/Stage
