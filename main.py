@@ -410,7 +410,7 @@ def show_assigned_to_user(redmine, redmine_conf):
         # Show table with issues
         console.print(table)
     else:
-        print("", Panel(Text(f"\nBrak zadań przypisanych do: {user_name}!\n", justify="center", style=get_color("red")),
+        print("", Panel(Text(f"\nBrak zadań przypisanych do: {user_name}, {user_id}\n", justify="center", style=get_color("red")),
                     title="[bold orange3]CZASOINATOR"))
 
 def stats(cursor):
