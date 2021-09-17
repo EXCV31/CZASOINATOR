@@ -51,6 +51,10 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 ### Do instalacji:
 * pip install -r requirements.txt
 
+### TODO:
+* Dodać statusy do opcji nr 6 (Nowy, w toku, odrzucony etc)
+* Pomyśleć nad wyrzuceniem bazy danych / dodaniem opcji sprawdzania godzin wprost z redmine zamiast lokalnie
+* 
 ### Do wypełnienia:
 
 #### Config.ini:
@@ -67,3 +71,5 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * DAILY=11:00:00
 * EXCLUDE=Samochody
 * INSTANCE=DEV/Stage
+
+
