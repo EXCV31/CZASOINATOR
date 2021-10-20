@@ -12,6 +12,7 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
 from rich.table import Table
+from rich import box
 import configparser
 from deep_translator import GoogleTranslator
 
@@ -23,24 +24,25 @@ console = Console()
 
 def welcome_user(redmine_conf):
     global frame_title
+    frame_title = f"[bold orange3]CZASOINATOR[/bold orange3] - [bold red]{redmine_conf['ADDRESS'].split('://')[1]}[/bold red]"
+
     # Make a connection to Redmine.
     redmine = Redmine(redmine_conf["ADDRESS"], key=redmine_conf["API_KEY"])
     try:
         user = redmine.user.get('current')
     except requests.exceptions.ConnectionError:
         display_error("Wystąpił problem z połączeniem do Redmine. Sprawdź stan sieci!")
-        input()
+        input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
         sys.exit(0)
     except redminelib.exceptions.AuthError:
         display_error("Użyto nieprawidłowych danych logowania!")
-        input()
+        input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
         sys.exit(0)
 
-    frame_title = f"[bold orange3]CZASOINATOR[/bold orange3] - [bold red]{redmine_conf['ADDRESS'].split('://')[1]}[/bold red]"
 
     print(Panel(Text("\nZalogowano pomyślnie!\n"
                      f"\nUżytkownik: {user.firstname} {user.lastname}"
-                     f"\nNa redmine od: {str(user.created_on)}\n", justify="center", style="white")
+                     f"\nNa Redmine od: {str(user.created_on)}\n", justify="center", style="white")
                 , style=get_color("green"), title=frame_title))
 
     return redmine
@@ -110,7 +112,6 @@ def get_started(frame_title):
 
     # Info variable is being used to show user a legend of possible options.
     if not info:
-        # Show rich panel
         print(Panel(Text("\nWybierz co chcesz zrobić:\n"
                          "\n1. Uruchom zliczanie czasu"
                          "\n2. Sprawdź dzisiejsze postępy"
@@ -156,7 +157,6 @@ def issue_stopwatch(redmine, cursor, conn):
         display_error("404 - Wybrane zadanie nie istnieje!")
         return
 
-    # Show rich panel
     print("", Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center", style="white"),
                     style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"),
           "")
@@ -172,7 +172,6 @@ def issue_stopwatch(redmine, cursor, conn):
     stop_timestamp = int(calendar.timegm(time.gmtime()))
     time_elapsed = round(((stop_timestamp - start_timestamp) / 60 / 60), 2)
 
-    # Show rich panel
     print("", Panel(
         Text(f"\nZakończono pracę nad #{issue_id}!\n Spędzony czas: {time_elapsed} godzin.\n ", justify="center",
              style="white"), style=get_color("light_blue"),
@@ -186,19 +185,23 @@ def issue_stopwatch(redmine, cursor, conn):
         try:
             redmine.time_entry.create(issue_id=issue_id, spent_on=date.today(),
                                       hours=time_elapsed, activity_id=8, comments=comment)
-
-            # Translate comment from user input above
-            translated_comment = GoogleTranslator(source="auto", target="en").translate(comment)
-
-            # Show rich panel
-            print("", Panel(Text(f"\nDodano!"
-                                 f"\n\nSpędzony czas: {time_elapsed}"
-                                 f"\nKomentarz: {comment}\n"
-                                 f"\nPamiętaj o git commit -m \"TASK#{issue_id}: {translated_comment}\" && git push\n",
-                                 justify="center", style="white"), style=get_color("green"),
-                            title="[bold orange3]CZASOINATOR"))
         except Exception as e:
             print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
+            return
+        
+        commit_reminder = ""
+        
+        if redmine_conf["PROGRAMMER_MODE"] == "true":
+            # Translate comment from user input above
+            commit_reminder = f"\nPamiętaj o git commit -m \"TASK#{issue_id}: {GoogleTranslator(source='auto', target='en').translate(comment)}\" && git push\n"
+        
+        print("", Panel(Text(f"\nDodano!"
+                                f"\n\nSpędzony czas: {time_elapsed}"
+                                f"\nKomentarz: {comment}\n"
+                                f"{commit_reminder}",
+                                justify="center", style="white"), style=get_color("green"),
+                                title="[bold orange3]CZASOINATOR"))
+    
 
     current_time, _, _ = get_time()
 
@@ -230,7 +233,6 @@ def show_work(cursor, redmine_conf, day):
 
     # Empty rows variable means there's no SQL entries.
     if not rows:
-        # Show rich panel
         print("", Panel(Text("\n Brak postępów! \n", justify="center", style="white"), style=get_color("orange"),
                         title="[bold orange3]CZASOINATOR"))
 
@@ -238,7 +240,8 @@ def show_work(cursor, redmine_conf, day):
 
     # Generate column to show data from sql
     table = Table(show_header=True, header_style=get_color("bold_purple"),
-                  title=f'[{get_color("bold_blue")}]POSTĘPY DNIA {day}', show_lines=True)
+                  title=f'[{get_color("bold_blue")}]POSTĘPY DNIA {day}', show_lines=True, box=box.DOUBLE)
+
     table.add_column("Data rozpoczęcia", justify="center")
     table.add_column("Nazwa zadania", justify="center")
     table.add_column("Spędzony czas", justify="center")
@@ -306,7 +309,6 @@ def add_manually_to_database(redmine, cursor):
         display_error("404 - Wybrane zadanie nie istnieje!")
         return
 
-    # Show rich panel
     print("",
           Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center", style="white"),
                 style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
@@ -337,7 +339,6 @@ def add_manually_to_database(redmine, cursor):
         conn.commit()
         conn.close()
 
-        # Show rich panel
         print("", Panel(Text(f"\nDodano!"
                              f"\n\nSpędzony czas: {time_elapsed}"
                              f"\nKomentarz: {comment}\n", justify="center", style="white"), style=get_color("green"),
@@ -362,7 +363,6 @@ def add_own_to_database(cursor):
     conn.commit()
     conn.close()
 
-    # Show rich panel
     print("", Panel(Text(f"\nDodano!"
                          f"\n\nNazwa Zadania: {issue_name}"
                          f"\nSpędzony czas: {time_elapsed}\n", justify="center", style="white"),
@@ -378,18 +378,20 @@ def show_assigned_to_user(redmine, redmine_conf):
     user_name = str(user)
     user_id = user["id"]
 
-    # Filter issues with "open" status assigned to use, excluding groups.
-    issues = redmine.issue.filter(assigned_to_id=user_id)
-
     # Generate column to show data from redmine
     table = Table(show_header=True, header_style=get_color("bold_purple"),
-                  title=f'[{get_color("bold_blue")}]Zadania przypisane do: {user_name}, ID: {user_id}', show_lines=True)
+                  title=f'[{get_color("bold_blue")}]Zadania przypisane do: {user_name}, ID: {user_id}', show_lines=True, box=box.DOUBLE)
     table.add_column("Typ zadania", justify="center")
     table.add_column("Nazwa zadania", justify="center")
     table.add_column("Priorytet", justify="center")
+    table.add_column("Status", justify="center")
     table.add_column("% ukończenia", justify="center")
     table.add_column("Spędzony czas", justify="center")
     table.add_column("Numer zadania", justify="center")
+
+    # Filter issues with "open" status assigned to use, excluding groups.
+    issues = redmine.issue.filter(assigned_to_id=user_id)
+
     if len(issues) > 0:
 
         for issue in issues:
@@ -414,14 +416,22 @@ def show_assigned_to_user(redmine, redmine_conf):
             else:
                 done_color = get_color("bold_red")
 
+            # Color matching by issue status
+            if str(issue.status) == "Zablokowany":
+                status_color = get_color("bold_red")
+            else:
+                status_color = "white"
+
             # Get data about hours worked and put in total variable
             for time in issue.time_entries:
                 info = redmine.time_entry.get(time)
                 total += info.hours
 
             # Add a row to the table to display it after data collection
-            table.add_row(f"{issue.tracker['name']}", f"{issue.subject}",
+            table.add_row(f"{issue.tracker['name']}",
+                          f"{issue.subject}",
                           f"[{priority_color}]{issue.priority}[/{priority_color}]",
+                          f"[{status_color}]{str(issue.status)}[/{status_color}]",
                           f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", f"{str(round(total, 2))}",
                           f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
 
@@ -445,7 +455,6 @@ def stats(cursor):
         total_hours += float(row[0])
     total_hours = round(total_hours, 2)
 
-    # Show rich panel
     print("", Panel(Text(f"\n Czas spędzony z CZASOINATOREM: {total_hours} godzin \n", justify="center", style="white"),
                     style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
 
