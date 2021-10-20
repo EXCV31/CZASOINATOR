@@ -39,7 +39,7 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 ### 6. Sprawdź zadania przypisane do Ciebie - gdy nie wiesz czym się zająć
 
-* Odpytanie redmine o zagadnienia przypisane do ID użytkownika - pobierane przez API key. Wyświetlane w formie tabeli. W przypadku braku zadań wyświetlany odpowiedni komunikat. Jako feature dodany jest w configu \[EXCLUDE\], aby pominąć całe trackery których nie chce się wyświetlać.
+* Odpytanie redmine o zagadnienia przypisane do ID użytkownika - pobierane przez API key. Wyświetlane w formie tabeli. W przypadku braku zadań wyświetlany odpowiedni komunikat. W przypadku "lepszych" terminali po kliknięciu LPM wraz z CTRL w numer zadania zostanie otworzona przeglądarka z tym zadaniem.
 
 ### 7. Statystyki
 
@@ -51,10 +51,6 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 ### Do instalacji:
 * pip install -r requirements.txt
 
-### TODO:
-* Dodać statusy do opcji nr 6 (Nowy, w toku, odrzucony etc)
-* Pomyśleć nad wyrzuceniem bazy danych / dodaniem opcji sprawdzania godzin wprost z redmine zamiast lokalnie
-* 
 ### Do wypełnienia:
 
 #### Config.ini:
@@ -62,7 +58,7 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * API_KEY= Klucz API
 * DAILY= Godzina daily w formacie HH:MM:SS
 * EXCLUDE= Opcjonalnie - Które projekty ominąć przy listowaniu zadań należących do użytkownika, oddzielone przecinkiem
-* INSTANCE= Opcjonalnie - Na której instacji aktualnie pracujemy, może służyć także jako nazwa firmy wyświetlana po uruchomieniu programu na belce
+* PROGRAMMER_MODE= Opcjonalnie - w przypadku ustawienia wartości "true" przy zakończeniu prac zostanie pokazana przypominajka o git commit z numerem taska oraz przetłumaczonym na język angielski komentarzem.
 
 #### Przykładowe wypełnienie:
 * [REDMINE]
@@ -70,6 +66,6 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416
 * DAILY=11:00:00
 * EXCLUDE=Samochody
-* INSTANCE=DEV/Stage
+* PROGRAMMER_MODE=true
 
 
