@@ -15,36 +15,52 @@ from rich.table import Table
 from rich import box
 import configparser
 from deep_translator import GoogleTranslator
+import logging
+
+logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %(levelname)s: %(message)s')
 
 stop = ""
 choose = 0
 info = False
 console = Console()
 
+logging.info("Aplikacja została uruchomiona")
+
+
+def exit_program():
+    '''Store logs about exit and... just exit'''
+
+    logging.info("Wyjście z aplikacji")
+    sys.exit(0)
+
 
 def welcome_user(redmine_conf):
     global frame_title
     frame_title = f"[bold orange3]CZASOINATOR[/bold orange3] - [bold red]{redmine_conf['ADDRESS'].split('://')[1]}[/bold red]"
 
-    # Make a connection to Redmine.
-    redmine = Redmine(redmine_conf["ADDRESS"], key=redmine_conf["API_KEY"])
-    try:
-        user = redmine.user.get('current')
-    except requests.exceptions.ConnectionError:
-        display_error("Wystąpił problem z połączeniem do Redmine. Sprawdź stan sieci!")
-        input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
-        sys.exit(0)
-    except redminelib.exceptions.AuthError:
-        display_error("Użyto nieprawidłowych danych logowania!")
-        input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
-        sys.exit(0)
+    # # Make a connection to Redmine.
+    # redmine = Redmine(redmine_conf["ADDRESS"], key=redmine_conf["API_KEY"])
+    # try:
+    #     user = redmine.user.get('current')
+    # except requests.exceptions.ConnectionError:
+    #     display_error("Wystąpił problem z połączeniem do Redmine. Sprawdź stan sieci!")
+    #     input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
+    #     exit_program()
+    # except redminelib.exceptions.AuthError:
+    #     display_error("Użyto nieprawidłowych danych logowania!")
+    #     input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
+    #     exit_program()
+    # except redminelib.exceptions.ForbiddenError:
+    #     display_error("Brak dostępu do danych API! Skontaktuj się z administratorem sieci.")
+    #     input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
+    #     exit_program()
 
 
-    print(Panel(Text("\nZalogowano pomyślnie!\n"
-                     f"\nUżytkownik: {user.firstname} {user.lastname}"
-                     f"\nNa Redmine od: {str(user.created_on)}\n", justify="center", style="white")
-                , style=get_color("green"), title=frame_title))
-
+    # print(Panel(Text("\nZalogowano pomyślnie!\n"
+    #                  f"\nUżytkownik: {user.firstname} {user.lastname}"
+    #                  f"\nNa Redmine od: {str(user.created_on)}\n", justify="center", style="white")
+    #             , style=get_color("green"), title=frame_title))
+    redmine = ""
     return redmine
 
 
@@ -52,6 +68,7 @@ def display_error(text):
     global frame_title
     print("")
     print(Panel(Text(f"\n{text}\n", justify="center", style="white"), style=get_color("red"), title=frame_title))
+    logging.error(text)
 
 
 def get_color(color):
@@ -98,7 +115,7 @@ def get_time():
 
 
 def init():
-    # Set configparser, read config and setup redmine_conf variable
+    '''Set configparser, read config and setup redmine_conf variable'''
     config = configparser.ConfigParser()
     config.read("config.ini")
     redmine_conf = config['REDMINE']
@@ -130,7 +147,7 @@ def get_started(frame_title):
     choose = input("\nWybór > ")
 
     # Set up sqlite
-    conn = sqlite3.connect(f"czasoinator.sqlite")
+    conn = sqlite3.connect("czasoinator.sqlite")
     cursor = conn.cursor()
     cursor.execute(
         "CREATE TABLE IF NOT EXISTS BAZA_DANYCH (DATA TEXT, NUMER_ZADANIA TEXT, "
@@ -201,7 +218,6 @@ def issue_stopwatch(redmine, cursor, conn):
                                 f"{commit_reminder}",
                                 justify="center", style="white"), style=get_color("green"),
                                 title="[bold orange3]CZASOINATOR"))
-    
 
     current_time, _, _ = get_time()
 
@@ -332,8 +348,8 @@ def add_manually_to_database(redmine, cursor):
             print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
 
         # Insert user work to database.
-        cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
-                       f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, time_elapsed, comment,))
+        cursor.execute("INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
+                       "(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, time_elapsed, comment,))
 
         # Apply changes and close connection to sqlite database.
         conn.commit()
@@ -462,7 +478,7 @@ def stats(cursor):
 if __name__ == "__main__":
     redmine_conf = init()
     redmine = welcome_user(redmine_conf)
-    while choose != str(8):
+    while True:
         cursor, choose, conn = get_started(frame_title)
         if choose == str(1):
             issue_stopwatch(redmine, cursor, conn)
@@ -480,5 +496,7 @@ if __name__ == "__main__":
             show_assigned_to_user(redmine, redmine_conf)
         if choose == str(7):
             stats(cursor)
+        if choose == str(8):
+            exit_program()
         if choose == "?":
             info = False
