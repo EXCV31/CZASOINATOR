@@ -13,6 +13,8 @@ from rich.text import Text
 from rich.console import Console
 from rich.table import Table
 from rich import box
+from rich import progress_bar
+from rich.progress import track, TimeElapsedColumn
 import configparser
 import logging
 from timeit import default_timer as timer
@@ -335,16 +337,16 @@ def show_work(cursor, redmine_conf, day):
         row_1 = row[1]
 
         # Same as above, eg 4.86 -> 04:51.
-        time = float(row[3])
-        minutes = 60 * (time % 1)
-        time = "0%d:%02d" % (time, minutes)
+        time_spent = float(row[3])
+        minutes = 60 * (time_spent % 1)
+        time_spent = "0%d:%02d" % (time_spent, minutes)
 
         # Append row to table with recognizing that info about work has issue number.
         if row_1 is None:
-            table.add_row(row[0], row[2], f"[{color}]{time}[/{color}]", row[4],
+            table.add_row(row[0], row[2], f"[{color}]{time_spent}[/{color}]", row[4],
                           f"[{get_color('bold_red')}]Brak![/{get_color('bold_red')}]")
         else:
-            table.add_row(row[0], row[2], f"[{color}]{time}[/{color}]", row[4],
+            table.add_row(row[0], row[2], f"[{color}]{time_spent}[/{color}]", row[4],
                           f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{row[1]}]#{row[1]}[/link][/{get_color('light_blue')}]")
     
     table.caption = f"Sumaryczny czas w tym dniu: {total_hours} godzin"
@@ -466,7 +468,9 @@ def show_assigned_to_user(redmine, redmine_conf):
 
     # Generate column to show data from redmine
     table = Table(show_header=True, header_style=get_color("bold_purple"),
-                  title=f'[{get_color("bold_blue")}]Zadania przypisane do: {user_name}, ID: {user_id}', show_lines=True, box=box.DOUBLE)
+                  title=f'[{get_color("bold_blue")}]Zadania przypisane do: {user_name}, ID: {user_id}', 
+                  show_lines=True, box=box.DOUBLE, expand=True)
+
     table.add_column("Typ zadania", justify="center")
     table.add_column("Nazwa zadania", justify="center")
     table.add_column("Priorytet", justify="center")
@@ -475,18 +479,20 @@ def show_assigned_to_user(redmine, redmine_conf):
     table.add_column("Spędzony czas", justify="center")
     table.add_column("Numer zadania", justify="center")
 
-    # Filter issues with "open" status assigned to use, excluding groups.
     logging.info("Rozpoczęto przetwawrzanie zadań przypisanych do użytkownika...")
     start = timer()
-
+    
+    # Filter issues with "open" status assigned to use, excluding groups.
     issues = redmine.issue.filter(assigned_to_id=user_id)
 
     if len(issues) > 0:
 
-        for issue in issues:
-
+        progress_bar.ProgressBar(completed=0, width=None, pulse=False, style='bar.back',
+        complete_style='bar.complete', finished_style='bar.finished', pulse_style='bar.pulse', animation_time=None)
+        for issue in track(issues, description="Pobieranie danych..."):
+            time.sleep(0.01)
             # Skip project name if any mentioned in config.ini.
-            if issue.project["name"] in [redmine_conf["EXCLUDE"]]:
+            if issue.project["name"] in redmine_conf["EXCLUDE"].split("\n"):
                 continue
 
             # Color matching by priority.
@@ -512,8 +518,8 @@ def show_assigned_to_user(redmine, redmine_conf):
                 status_color = "white"
 
             # Get data about hours worked and put in total variable.
-            for time in issue.time_entries:
-                info = redmine.time_entry.get(time)
+            for time_entry in issue.time_entries:
+                info = redmine.time_entry.get(time_entry)
                 total += info.hours
 
             # Add a row to the table to display it after data collection.
