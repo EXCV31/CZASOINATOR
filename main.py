@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import box
 from rich import progress_bar
-from rich.progress import track, TimeElapsedColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
 import configparser
 import logging
 from timeit import default_timer as timer
@@ -221,9 +221,10 @@ def issue_stopwatch(redmine, cursor, conn):
           "")
     logging.info(f"Rozpoczęto mierzenie czasu dla zadania #{issue_id}")
     # Wait for input from user, to stop the stopwatch.
+    console.print(f'[{get_color("bold_green")}]Rozpoczęto mierzenie czasu![/{get_color("bold_green")}]')
     while stop != "k":
         stop = console.input(
-            f'[{get_color("bold_green")}]Rozpoczęto mierzenie czasu![/{get_color("bold_green")}] \n\nGdy zakończysz pracę nad zadaniem wpisz [{get_color("bold_green")}]k[/{get_color("bold_green")}], lub [{get_color("bold_red")}]x[/{get_color("bold_red")}] aby anulować > ')
+            f'\nGdy zakończysz pracę nad zadaniem wpisz [{get_color("bold_green")}]k[/{get_color("bold_green")}], lub [{get_color("bold_red")}]x[/{get_color("bold_red")}] aby anulować > ')
         if stop.lower() == "x":
             return
     logging.info(f"Zakończono mierzenie czasu dla zadania #{issue_id}")
@@ -454,9 +455,19 @@ def show_assigned_to_user(redmine, redmine_conf):
     in projects defined in config.ini, in the "EXCLUDE" section.
 
     Keyword arguments:
-    redmine -- Connection to redmine.
+    redmine      -- Connection to redmine.
     redmine_conf -- config.ini stored in variable, used for pbtaining EXCLUDE key.
     '''
+
+    progress_columns = (
+        "[progress.description]{task.description}",
+        BarColumn(),
+        TaskProgressColumn(),
+        "Minęło:",
+        TimeElapsedColumn(),
+        "Pozostało:",
+        TimeRemainingColumn(),
+    )
 
     # "total" variable is used to represent hours spent on each issue.
     total = 0
@@ -479,74 +490,87 @@ def show_assigned_to_user(redmine, redmine_conf):
     table.add_column("Spędzony czas", justify="center")
     table.add_column("Numer zadania", justify="center")
 
-    logging.info("Rozpoczęto przetwawrzanie zadań przypisanych do użytkownika...")
+    logging.info("Rozpoczęto przetwarzanie zadań przypisanych do użytkownika...")
     start = timer()
-    
+
     # Filter issues with "open" status assigned to use, excluding groups.
     issues = redmine.issue.filter(assigned_to_id=user_id)
-
+    
     if len(issues) > 0:
+        # Progress bar section. Progress bar has two attributes:
+        # task   -- is one and only progress bar.
+        # update -- function used to update progress bar in each iteration over list of issues.
+        with Progress(*progress_columns) as progress_bar:
 
-        progress_bar.ProgressBar(completed=0, width=None, pulse=False, style='bar.back',
-        complete_style='bar.complete', finished_style='bar.finished', pulse_style='bar.pulse', animation_time=None)
-        for issue in track(issues, description="Pobieranie danych..."):
-            time.sleep(0.01)
-            # Skip project name if any mentioned in config.ini.
-            if issue.project["name"] in redmine_conf["EXCLUDE"].split("\n"):
-                continue
+            # Formatting :)
+            console.print("")
 
-            # Color matching by priority.
-            if str(issue.priority) == "Niski":
-                priority_color = get_color("bold_green")
-            elif str(issue.priority) == "Normalny":
-                priority_color = get_color("bold_orange")
-            else:
-                priority_color = get_color("bold_red")
+            # Add a proggress bar.
+            task = progress_bar.add_task("[blue]Pobieranie danych...", total=len(issues))
+            for issue in issues:
 
-            # Color matching by % of completion.
-            if issue.done_ratio >= 66:
-                done_color = get_color("bold_green")
-            elif issue.done_ratio >= 33:
-                done_color = get_color("bold_orange")
-            else:
-                done_color = get_color("bold_red")
+                # Updating progress bar before processing issue, because of EXCLUDE "if" below.
+                progress_bar.update(task, advance=1)
 
-            # Color matching by issue status.
-            if str(issue.status) == "Zablokowany":
-                status_color = get_color("bold_red")
-            else:
-                status_color = "white"
+                # Delay for progress bar pretty-print.
+                time.sleep(0.005)
 
-            # Get data about hours worked and put in total variable.
-            for time_entry in issue.time_entries:
-                info = redmine.time_entry.get(time_entry)
-                total += info.hours
+                # Skip project name if any mentioned in config.ini.
+                if issue.project["name"] in redmine_conf["EXCLUDE"].split("\n"):
+                    continue
 
-            # Add a row to the table to display it after data collection.
-            table.add_row(f"{issue.tracker['name']}",
-                          f"{issue.subject}",
-                          f"[{priority_color}]{issue.priority}[/{priority_color}]",
-                          f"[{status_color}]{str(issue.status)}[/{status_color}]",
-                          f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", f"{str(round(total, 2))}",
-                          f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
+                # Color matching by priority.
+                if str(issue.priority) == "Niski":
+                    priority_color = get_color("bold_green")
+                elif str(issue.priority) == "Normalny":
+                    priority_color = get_color("bold_orange")
+                else:
+                    priority_color = get_color("bold_red")
 
-            # Reset variable for next issue.
-            total = 0
+                # Color matching by % of completion.
+                if issue.done_ratio >= 66:
+                    done_color = get_color("bold_green")
+                elif issue.done_ratio >= 33:
+                    done_color = get_color("bold_orange")
+                else:
+                    done_color = get_color("bold_red")
 
-        end = timer()
-        logging.info(f"Zakończono przetwarzanie zadań przypisanych do usera. Czas operacyjny: {end - start} sekund")        
+                # Color matching by issue status.
+                if str(issue.status) == "Zablokowany":
+                    status_color = get_color("bold_red")
+                else:
+                    status_color = "white"
+
+                # Get data about hours worked and put in total variable.
+                for time_entry in issue.time_entries:
+                    info = redmine.time_entry.get(time_entry)
+                    total += info.hours
+
+                # Add a row to the table to display it after data collection.
+                table.add_row(f"{issue.tracker['name']}",
+                            f"{issue.subject}",
+                            f"[{priority_color}]{issue.priority}[/{priority_color}]",
+                            f"[{status_color}]{str(issue.status)}[/{status_color}]",
+                            f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", f"{str(round(total, 2))}",
+                            f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
+
+                # Reset variable for next issue.
+                total = 0
+
+            end = timer()
+            logging.info(f"Zakończono przetwarzanie zadań przypisanych do usera. Czas operacyjny: {end - start} sekund")        
 
         # Show table with issues.
-        console.print(table)
-        
+        console.print("", table)
 
     else:
         end = timer()
         logging.info(f"Zakończono przetwarzanie zadań przypisanych do usera. Brak danych do wyświetlenia.")
         print("", Panel(Text(f"\nBrak zadań przypisanych do: {user_name}, {user_id}\n", justify="center",
-                             style=get_color("bold_red")),
+                            style=get_color("bold_red")),
                         title="[bold orange3]CZASOINATOR"))
 
+    
 
 def stats(cursor):
     '''
