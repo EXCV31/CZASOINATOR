@@ -275,6 +275,9 @@ def show_work(cursor, redmine_conf, day):
     It's set by choosing in "if __name__ == __main__" by get_time function
     which returns current time, yesterday and today.
     '''
+
+    total_hours = 0
+
     # This variable store information about doing anything before daily.
     info_daily = False
 
@@ -297,7 +300,7 @@ def show_work(cursor, redmine_conf, day):
 
     # Generate column to show data from SQL.
     table = Table(show_header=True, header_style=get_color("bold_purple"),
-                  title=f'[{get_color("bold_blue")}]POSTĘPY DNIA {day}', show_lines=True, box=box.DOUBLE)
+                  title=f'[{get_color("bold_blue")}]POSTĘPY DNIA {day}', show_lines=True, box=box.DOUBLE, expand=True)
 
     table.add_column("Data rozpoczęcia", justify="center")
     table.add_column("Nazwa zadania", justify="center")
@@ -306,6 +309,7 @@ def show_work(cursor, redmine_conf, day):
     table.add_column("Numer zadania", justify="center")
 
     for row in rows:
+        total_hours += float(row[3])
 
         # Set up colors for spent time.
         # 00:00-02:00 - Green
@@ -342,7 +346,8 @@ def show_work(cursor, redmine_conf, day):
         else:
             table.add_row(row[0], row[2], f"[{color}]{time}[/{color}]", row[4],
                           f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{row[1]}]#{row[1]}[/link][/{get_color('light_blue')}]")
-
+    
+    table.caption = f"Sumaryczny czas w tym dniu: {total_hours} godzin"
     # Show table with work time.
     console.print(table)
 
