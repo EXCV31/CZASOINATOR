@@ -120,12 +120,11 @@ def get_time():
     now = datetime.datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-    # Check if today is monday - used for valid "yesterday" when it's weekend:
+    # Check if today is monday - used for valid "yesterday" when it's weekend. If today is monday, yesterday is friday.
     if now.weekday() == 0:
         yesterday = now - datetime.timedelta(days=3)
         yesterday = str(yesterday).split(" ")[0]
     else:
-        # If today is monday, yesterday is friday.
         yesterday = now - datetime.timedelta(days=1)
         yesterday = str(yesterday).split(" ")[0]
 
@@ -500,7 +499,7 @@ def show_assigned_to_user(redmine, redmine_conf):
         # Progress bar section. Progress bar has two attributes:
         # task   -- is one and only progress bar.
         # update -- function used to update progress bar in each iteration over list of issues.
-        with Progress(*progress_columns) as progress_bar:
+        with Progress(*progress_columns, expand=True) as progress_bar:
 
             # Formatting :)
             console.print("")
