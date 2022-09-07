@@ -18,6 +18,7 @@ from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn
 import configparser
 import logging
 from timeit import default_timer as timer
+import re
 
 logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %(levelname)s: %(message)s')
 
@@ -134,6 +135,29 @@ def get_time():
     return current_time, yesterday, today
 
 
+def float_to_hhmm(float_time):
+    '''
+    Change float time to HH:MM format.
+    
+    Keyword arguments:
+    float_time -- time in float format eg. 1.75
+    '''
+
+    # Multiply float time by 60 to get minutes, split into hours and minutes
+    float_time = float_time * 60
+    hours, minutes = divmod(float_time, 60)
+
+    # Drop floating points numbers eg. 41.39999999999998 -> 41,
+    # then cast to str to add trailing or leading zero - to get always 2-digit minutes.
+    minutes = str(int(minutes))
+    if len(minutes) == 1 and minutes.startswith("0"):
+        minutes += "0"
+    elif len(minutes) == 1 and int(minutes) > 0:
+        minutes = "0" + minutes
+
+    return f"{int(hours)}:{minutes}"
+
+
 def init():
     '''Set configparser, read config and setup redmine_conf variable'''
 
@@ -163,10 +187,9 @@ def get_started(frame_title):
                          "\n2. Sprawdź dzisiejsze postępy"
                          "\n3. Sprawdź wczorajsze postępy"
                          "\n4. Dorzuć ręcznie czas do zadania"
-                         "\n5. Dorzuć ręcznie czas do bazy - własne zadanie"
-                         "\n6. Sprawdź zadania przypisane do Ciebie"
-                         "\n7. Statystyki"
-                         "\n8. Wyjście\n", justify="center", style="white"), style=get_color("light_blue"),
+                         "\n5. Sprawdź zadania przypisane do Ciebie"
+                         "\n6. Statystyki"
+                         "\n7. Wyjście\n", justify="center", style="white"), style=get_color("light_blue"),
                     title=frame_title))
         logging.info("Pokazano listę opcji do wyboru.")
 
@@ -219,6 +242,7 @@ def issue_stopwatch(redmine, cursor, conn):
                     style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"),
           "")
     logging.info(f"Rozpoczęto mierzenie czasu dla zadania #{issue_id}")
+
     # Wait for input from user, to stop the stopwatch.
     console.print(f'[{get_color("bold_green")}]Rozpoczęto mierzenie czasu![/{get_color("bold_green")}]')
     while stop != "k":
@@ -230,10 +254,11 @@ def issue_stopwatch(redmine, cursor, conn):
 
     # Stop stopwatch and calculate timestamp to hours eg. 2.63.
     stop_timestamp = int(calendar.timegm(time.gmtime()))
-    time_elapsed = round(((stop_timestamp - start_timestamp) / 60 / 60), 2)
+    float_time_elapsed = round(((stop_timestamp - start_timestamp) / 60 / 60), 2)
+    time_elapsed = float_to_hhmm(float_time_elapsed)
 
     print("", Panel(
-        Text(f"\nZakończono pracę nad #{issue_id}!\n Spędzony czas: {time_elapsed} godzin.\n ", justify="center",
+        Text(f"\nZakończono pracę nad #{issue_id}!\n Spędzony czas: {time_elapsed}\n ", justify="center",
              style="white"), style=get_color("light_blue"),
         title="[bold orange3]CZASOINATOR"))
 
@@ -262,7 +287,7 @@ def issue_stopwatch(redmine, cursor, conn):
 
     # Insert user work to database.
     cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
-                   f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, time_elapsed, comment))
+                   f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, float_time_elapsed, comment))
     logging.info("Umieszczono przepracowany czas w bazie danych.")
 
     # Apply changes and close connection to sqlite database.
@@ -337,9 +362,7 @@ def show_work(cursor, redmine_conf, day):
         row_1 = row[1]
 
         # Same as above, eg 4.86 -> 04:51.
-        time_spent = float(row[3])
-        minutes = 60 * (time_spent % 1)
-        time_spent = "0%d:%02d" % (time_spent, minutes)
+        time_spent = float_to_hhmm(float(row[3]))
 
         # Append row to table with recognizing that info about work has issue number.
         if row_1 is None:
@@ -348,8 +371,8 @@ def show_work(cursor, redmine_conf, day):
         else:
             table.add_row(row[0], row[2], f"[{color}]{time_spent}[/{color}]", row[4],
                           f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{row[1]}]#{row[1]}[/link][/{get_color('light_blue')}]")
-    
-    table.caption = f"Sumaryczny czas w tym dniu: {total_hours} godzin"
+    total_hours = float_to_hhmm(total_hours)
+    table.caption = f"Sumaryczny czas w tym dniu: {total_hours.split(':')[0]} godzin, {total_hours.split(':')[1]} minut"
     # Show table with work time.
     console.print(table)
 
@@ -388,25 +411,31 @@ def add_manually_to_redmine(redmine, cursor):
 
     if question.lower() == "t":
 
-        try:
-            time_elapsed = float(input("\nPodaj czas spędzony nad zadaniem - oddzielony kropką np 2.13 > "))
-        except ValueError:
+        # This variable is used in database.
+        time_elapsed = input("\nPodaj czas spędzony nad zadaniem w formacie H:MM - np 2:13 > ")
+
+        # Check if user pass time in correct format.
+        if not bool(re.match("\d:\d\d", time_elapsed)):
             display_error("Nieprawidłowa wartość dla pola: Spędzony czas")
             return
+
+        # Convert H:MM to float - eg 0:45 -> 0.80
+        hours, minutes = time_elapsed.split(":")
+        float_time_elapsed = round((int(hours) + float(minutes) / 60), 2)
 
         comment = input("Dodaj komentarz > ")
         # Catch problems with connection, permissions etc.
         try:
             redmine.time_entry.create(issue_id=issue_id, spent_on=today,
-                                      hours=time_elapsed, activity_id=8, comments=comment)
+                                      hours=float_time_elapsed, activity_id=8, comments=comment)
         except Exception as e:
             print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
 
         logging.info(f"Dodano manualnie przepracowany czas do redmine pod zadaniem #{issue_id} - {time_elapsed} godzin.")
         # Insert user work to database.
         cursor.execute("INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
-                       "(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, time_elapsed, comment,))
-        logging.info(f"Umieszczono w bazie danych dodany manualnie przepracowany czas pod zadaniem #{issue_id} - {time_elapsed} godzin.")
+                       "(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, float_time_elapsed, comment,))
+        logging.info(f"Umieszczono w bazie danych dodany manualnie przepracowany czas pod zadaniem #{issue_id} - {float_time_elapsed} godzin.")
 
         # Apply changes and close connection to sqlite database.
         conn.commit()
@@ -414,36 +443,9 @@ def add_manually_to_redmine(redmine, cursor):
         conn.close()
 
         print("", Panel(Text(f"\nDodano!"
-                             f"\n\nSpędzony czas: {time_elapsed}"
+                             f"\n\nSpędzony czas: {hours} godzin, {minutes} minut."
                              f"\nKomentarz: {comment}\n", justify="center", style="white"), style=get_color("green"),
                         title="[bold orange3]CZASOINATOR"))
-
-
-def add_own_to_database(cursor):
-    current_time, _, _ = get_time()
-
-    issue_name = input("\nPodaj nazwę zadania > ")
-    try:
-        time_elapsed = float(input("\nPodaj czas spędzony nad zadaniem - oddzielony kropką np 2.13 > "))
-    except ValueError:
-        display_error("Nieprawidłowa wartość dla pola: Spędzony czas")
-        return
-    comment = input("\nDodaj komentarz > ")
-    # Insert user work to database.
-    cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
-                   f"(?, ?, ?, ?)", (current_time, issue_name, time_elapsed, comment,))
-    logging.info(f"Umieszczono w bazie danych dodany manualnie przepracowany czas - bez zadania - {time_elapsed} godzin.")
-
-
-    # Apply changes and close connection to sqlite database.
-    conn.commit()
-    logging.info("Zakommitowano zmiany w bazie danych.")
-    conn.close()
-
-    print("", Panel(Text(f"\nDodano!"
-                         f"\n\nNazwa Zadania: {issue_name}"
-                         f"\nSpędzony czas: {time_elapsed}\n", justify="center", style="white"),
-                    style=get_color("green"), title="[bold orange3]CZASOINATOR"))
 
 
 def show_assigned_to_user(redmine, redmine_conf):
@@ -544,13 +546,17 @@ def show_assigned_to_user(redmine, redmine_conf):
                 for time_entry in issue.time_entries:
                     info = redmine.time_entry.get(time_entry)
                     total += info.hours
+                    
+                # Convert float time to HH:MM
+                time_spent = float_to_hhmm(round(total, 2))
 
                 # Add a row to the table to display it after data collection.
                 table.add_row(f"{issue.tracker['name']}",
                             f"{issue.subject}",
                             f"[{priority_color}]{issue.priority}[/{priority_color}]",
                             f"[{status_color}]{str(issue.status)}[/{status_color}]",
-                            f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", f"{str(round(total, 2))}",
+                            f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", 
+                            f"{time_spent}",
                             f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
 
                 # Reset variable for next issue.
@@ -584,9 +590,12 @@ def stats(cursor):
 
     for row in rows:
         total_hours += float(row[0])
-    total_hours = round(total_hours, 2)
 
-    print("", Panel(Text(f"\n Czas spędzony z CZASOINATOREM: {total_hours} godzin \n", justify="center", style="white"),
+    # Convert float time to HH:MM
+    total_hours = float_to_hhmm(total_hours)
+
+
+    print("", Panel(Text(f"\n Czas spędzony z CZASOINATOREM: {total_hours.split(':')[0]} godzin, {total_hours.split(':')[1]} minut\n", justify="center", style="white"),
                     style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
 
 
@@ -606,12 +615,10 @@ if __name__ == "__main__":
         if choose == str(4):
             add_manually_to_redmine(redmine, cursor)
         if choose == str(5):
-            add_own_to_database(cursor)
-        if choose == str(6):
             show_assigned_to_user(redmine, redmine_conf)
-        if choose == str(7):
+        if choose == str(6):
             stats(cursor)
-        if choose == str(8):
+        if choose == str(7):
             exit_program()
         if choose == "?":
             info = False
