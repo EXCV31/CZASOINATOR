@@ -276,7 +276,8 @@ def issue_stopwatch(redmine, cursor, conn):
 
     comment = input("\nDodaj komentarz > ")
 
-    if input("Dodać czas do zadania w redmine? t/n > ").lower() == "t":
+    decision = input("Dodać czas do zadania w redmine? T/n > ")
+    if decision.lower() == "t" or decision == "":
 
         # Catch problems with connection, permissions etc.
         try:
@@ -295,16 +296,16 @@ def issue_stopwatch(redmine, cursor, conn):
                                      justify="center", style="white"), style=get_color("green"),
                                 title="[bold orange3]CZASOINATOR"))
 
-    current_time, _, _ = get_time()
+        current_time, _, _ = get_time()
 
-    # Insert user work to database.
-    cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
-                   f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, float_time_elapsed, comment))
-    logging.info("Umieszczono przepracowany czas w bazie danych.")
+        # Insert user work to database.
+        cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
+                    f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, float_time_elapsed, comment))
+        logging.info("Umieszczono przepracowany czas w bazie danych.")
 
-    # Apply changes and close connection to sqlite database.
-    conn.commit()
-    logging.info("Zacommitowano zmiany w bazie danych.")
+        # Apply changes and close connection to sqlite database.
+        conn.commit()
+        logging.info("Zacommitowano zmiany w bazie danych.")
 
 
 def show_work(cursor, day):
@@ -420,9 +421,9 @@ def add_manually_to_redmine(redmine, cursor):
                   Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center", style="white"),
                         style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
 
-    question = input("\nKontynuować? t/n > ")
+    question = input("\nKontynuować? T/n > ")
 
-    if question.lower() == "t":
+    if question.lower() == "t" or question == "":
 
         # This variable is used in database.
         time_elapsed = input("\nPodaj czas spędzony nad zadaniem w formacie H:MM - np 2:13 > ")
