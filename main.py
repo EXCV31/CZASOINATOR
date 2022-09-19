@@ -7,20 +7,22 @@ import time
 from datetime import date
 import sys
 import sqlite3
-from rich import print as print
 from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
 from rich.table import Table
 from rich import box
-from rich import progress_bar
-from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
+from rich.progress import BarColumn, Progress, TaskProgressColumn, TimeElapsedColumn, TimeRemainingColumn
 import configparser
 import logging
 from timeit import default_timer as timer
 import re
+import platform
+import subprocess
 
-logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %(levelname)s: %(message)s')
+logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %('
+                                                                                              'levelname)s: %('
+                                                                                              'message)s')
 
 stop = ""
 choose = 0
@@ -30,18 +32,23 @@ console = Console()
 logging.info("Aplikacja została uruchomiona")
 
 
-def exit_program():
-    '''Store logs about exit and... just exit'''
-
-    logging.info("Wyjście z aplikacji")
-    sys.exit(0)
-
-
-def welcome_user(redmine_conf):
-    ''' Make a connection to redmine, and greet user.'''
+def welcome_user():
+    """Parse config, log into redmine and greet user."""
 
     global frame_title
-    frame_title = f"[bold orange3]CZASOINATOR[/bold orange3] - [bold red]{redmine_conf['ADDRESS'].split('://')[1]}[/bold red]"
+    global redmine_conf
+    console.rule(
+        f"[{get_color('bold_orange')}]CZASOINATOR[/{get_color('bold_orange')}] - Trwa ładowanie aplikacji...", )
+
+    # Set configparser and read config.
+    logging.info("Parsowanie config.ini...")
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    redmine_conf = config['REDMINE']
+    logging.info("Parsowanie ukończone.")
+
+    # Setup frame title: display CZASOINATOR - {split address from config}
+    frame_title = f"[{get_color('bold_orange')}]CZASOINATOR[/{get_color('bold_orange')}] - [bold red]{redmine_conf['ADDRESS'].split('://')[1]}[/bold red]"
 
     # Make a connection to Redmine.
     logging.info(f"Próba połączenia z serwerem {redmine_conf['ADDRESS']}...")
@@ -61,34 +68,44 @@ def welcome_user(redmine_conf):
         input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
         exit_program()
 
+    # Clear terminal
+    if platform.system() == "Linux" or platform.system() == "Darwin":
+        subprocess.run("clear")
+    else:
+        subprocess.run("cls")
+
     logging.info(f"Połączenie zakończone sukcesem. Zalogowany jako {user.firstname} {user.lastname}")
-    print(Panel(Text("\nZalogowano pomyślnie!\n"
-                     f"\nUżytkownik: {user.firstname} {user.lastname}"
-                     f"\nNa Redmine od: {str(user.created_on)}\n", justify="center", style="white")
-                , style=get_color("green"), title=frame_title))
+
+    console.print(Panel(Text("\nZalogowano pomyślnie!\n"
+                             f"\nUżytkownik: {user.firstname} {user.lastname}"
+                             f"\nNa Redmine od: {str(user.created_on)}\n", justify="center", style="white")
+                        , style=get_color("green"), title=frame_title))
+
+    # It just better look with that.
+    time.sleep(0.5)
     return redmine
 
 
 def display_error(text):
-    '''
+    """
     Function used for displaying errors - normal and critical. Often used before exit_program().
 
     Keyword arguments:
     text -- Text of error displayed in frame.
-    '''
-    global frame_title
+    """
     print("")
-    print(Panel(Text(f"\n{text}\n", justify="center", style="white"), style=get_color("red"), title=frame_title))
+    console.print(
+        Panel(Text(f"\n{text}\n", justify="center", style="white"), style=get_color("red"), title=frame_title))
     logging.error(text)
 
 
 def get_color(color):
-    ''' 
+    """
     Function is called when there's need for color, especially for rendering tables.
 
     Keyword arguments:
     color -- Used in matching color with hex code below.
-    '''
+    """
 
     if color == "bold_red":
         return "bold #ff4242"
@@ -113,10 +130,10 @@ def get_color(color):
 
 
 def get_time():
-    '''
+    """
     Return current time, yesterday and today. If today is Monday,
     function will return Friday as yesterday.
-    '''
+    """
     # Get and format current date
     now = datetime.datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -136,18 +153,18 @@ def get_time():
 
 
 def float_to_hhmm(float_time):
-    '''
+    """
     Change float time to HH:MM format.
-    
+
     Keyword arguments:
-    float_time -- time in float format eg. 1.75
-    '''
+    float_time -- time in float format e.g  1.75
+    """
 
     # Multiply float time by 60 to get minutes, split into hours and minutes
     float_time = float_time * 60
     hours, minutes = divmod(float_time, 60)
 
-    # Drop floating points numbers eg. 41.39999999999998 -> 41,
+    # Drop floating points numbers e.g. 41.39999999999998 -> 41,
     # then cast to str to add trailing or leading zero - to get always 2-digit minutes.
     minutes = str(int(minutes))
     if len(minutes) == 1 and minutes.startswith("0"):
@@ -158,41 +175,29 @@ def float_to_hhmm(float_time):
     return f"{int(hours)}:{minutes}"
 
 
-def init():
-    '''Set configparser, read config and setup redmine_conf variable'''
-
-    logging.info("Parsowanie config.ini...")
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-    redmine_conf = config['REDMINE']
-    logging.info("Parsowanie ukończone.")
-    return redmine_conf
-
-
 def get_started(frame_title):
-    '''
+    """
     Point where program start with user interaction.
 
     Keyword arguments:
-    frame_title -- The part of the frame that displays in the middle of it. 
+    frame_title -- The part of the frame that displays in the middle of it.
     It contains information such as the name of the program and the address of the redmine it is connected to.
-    '''
+    """
     global choose
     global info
 
     # Info variable is being used to show user a legend of possible options.
     if not info:
-        print(Panel(Text("\nWybierz co chcesz zrobić:\n"
-                         "\n1. Uruchom zliczanie czasu"
-                         "\n2. Sprawdź dzisiejsze postępy"
-                         "\n3. Sprawdź wczorajsze postępy"
-                         "\n4. Dorzuć ręcznie czas do zadania"
-                         "\n5. Sprawdź zadania przypisane do Ciebie"
-                         "\n6. Statystyki"
-                         "\n7. Wyjście\n", justify="center", style="white"), style=get_color("light_blue"),
-                    title=frame_title))
+        console.print(Panel(Text("\nWybierz co chcesz zrobić:\n"
+                                 "\n1. Uruchom zliczanie czasu"
+                                 "\n2. Sprawdź dzisiejsze postępy"
+                                 "\n3. Sprawdź wczorajsze postępy"
+                                 "\n4. Dorzuć ręcznie czas do zadania"
+                                 "\n5. Sprawdź zadania przypisane do Ciebie"
+                                 "\n6. Statystyki"
+                                 "\n7. Wyjście\n", justify="center", style="white"), style=get_color("light_blue"),
+                            title=frame_title))
         logging.info("Pokazano listę opcji do wyboru.")
-
 
         # Turn off info after showing legend once.
         info = True
@@ -209,16 +214,23 @@ def get_started(frame_title):
     return cursor, choose, conn
 
 
+def exit_program():
+    """Store logs about exit and... just exit"""
+
+    logging.info("Wyjście z aplikacji")
+    sys.exit(0)
+
+
 def issue_stopwatch(redmine, cursor, conn):
-    '''
-    The function is responsible for measuring the time for the task selected by the user. 
+    """
+    The function is responsible for measuring the time for the task selected by the user.
     After the measurement is completed, it places the collected data in the database.
 
     Keyword arguments:
     redmine -- Connection to redmine.
     cursor  -- Cursor for executing SQL commands.
     conn    -- Connection to database.
-    '''
+    """
 
     # Stop variable is used to stop the stopwatch.
     stop = ""
@@ -238,9 +250,9 @@ def issue_stopwatch(redmine, cursor, conn):
         display_error("404 - Wybrane zadanie nie istnieje!")
         return
 
-    print("", Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center", style="white"),
-                    style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"),
-          "")
+    console.print("", Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center", style="white"),
+                            style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"),
+                  "")
     logging.info(f"Rozpoczęto mierzenie czasu dla zadania #{issue_id}")
 
     # Wait for input from user, to stop the stopwatch.
@@ -252,12 +264,12 @@ def issue_stopwatch(redmine, cursor, conn):
             return
     logging.info(f"Zakończono mierzenie czasu dla zadania #{issue_id}")
 
-    # Stop stopwatch and calculate timestamp to hours eg. 2.63.
+    # Stop stopwatch and calculate timestamp to hours e.g 2.63.
     stop_timestamp = int(calendar.timegm(time.gmtime()))
     float_time_elapsed = round(((stop_timestamp - start_timestamp) / 60 / 60), 2)
     time_elapsed = float_to_hhmm(float_time_elapsed)
 
-    print("", Panel(
+    console.print("", Panel(
         Text(f"\nZakończono pracę nad #{issue_id}!\n Spędzony czas: {time_elapsed}\n ", justify="center",
              style="white"), style=get_color("light_blue"),
         title="[bold orange3]CZASOINATOR"))
@@ -277,11 +289,11 @@ def issue_stopwatch(redmine, cursor, conn):
 
         logging.info(f"Dodano czas do redmine dla zadania #{issue_id}.")
 
-        print("", Panel(Text(f"\nDodano!"
-                            f"\n\nSpędzony czas: {time_elapsed}"
-                            f"\nKomentarz: {comment}\n",
-                            justify="center", style="white"), style=get_color("green"),
-                            title="[bold orange3]CZASOINATOR"))
+        console.print("", Panel(Text(f"\nDodano!"
+                                     f"\n\nSpędzony czas: {time_elapsed}"
+                                     f"\nKomentarz: {comment}\n",
+                                     justify="center", style="white"), style=get_color("green"),
+                                title="[bold orange3]CZASOINATOR"))
 
     current_time, _, _ = get_time()
 
@@ -295,13 +307,13 @@ def issue_stopwatch(redmine, cursor, conn):
     logging.info("Zacommitowano zmiany w bazie danych.")
 
 
-def show_work(cursor, redmine_conf, day):
-    '''
+def show_work(cursor, day):
+    """
     Some magic happeened here!
     With user input from get_started() day variable is set to today or yesterday.
     It's set by choosing in "if __name__ == __main__" by get_time function
     which returns current time, yesterday and today.
-    '''
+    """
 
     total_hours = 0
 
@@ -320,8 +332,9 @@ def show_work(cursor, redmine_conf, day):
 
     # Empty rows variable means there's no SQL entries.
     if not rows:
-        print("", Panel(Text("\n Brak postępów! \n", justify="center", style="white"), style=get_color("orange"),
-                        title="[bold orange3]CZASOINATOR"))
+        console.print("",
+                      Panel(Text("\n Brak postępów! \n", justify="center", style="white"), style=get_color("orange"),
+                            title="[bold orange3]CZASOINATOR"))
 
         return
 
@@ -350,7 +363,7 @@ def show_work(cursor, redmine_conf, day):
             color = get_color("bold_red")
 
         # Split row with date: 24-11-2021 14:20:52 -> 14:20:52.
-        # Drop ":" from splitted data above, and compare it with daily variable.
+        # Drop ":" from split data above, and compare it with daily variable.
         # Also check if "daily lines" are displayed before.
         if row[0].split(" ")[1].replace(":", "") > daily and info_daily is False:
             table.add_row(f'{day} {redmine_conf["DAILY"]}',
@@ -403,9 +416,9 @@ def add_manually_to_redmine(redmine, cursor):
         display_error(f"404 - zadanie {issue_id} nie istnieje!")
         return
 
-    print("",
-          Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center", style="white"),
-                style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
+    console.print("",
+                  Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center", style="white"),
+                        style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
 
     question = input("\nKontynuować? t/n > ")
 
@@ -415,7 +428,7 @@ def add_manually_to_redmine(redmine, cursor):
         time_elapsed = input("\nPodaj czas spędzony nad zadaniem w formacie H:MM - np 2:13 > ")
 
         # Check if user pass time in correct format.
-        if not bool(re.match("\d:\d\d", time_elapsed)):
+        if not bool(re.match(r"\d:\d\d", time_elapsed)):
             display_error("Nieprawidłowa wartość dla pola: Spędzony czas")
             return
 
@@ -429,36 +442,38 @@ def add_manually_to_redmine(redmine, cursor):
             redmine.time_entry.create(issue_id=issue_id, spent_on=today,
                                       hours=float_time_elapsed, activity_id=8, comments=comment)
         except Exception as e:
-            print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
+            console.print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
 
-        logging.info(f"Dodano manualnie przepracowany czas do redmine pod zadaniem #{issue_id} - {time_elapsed} godzin.")
+        logging.info(
+            f"Dodano manualnie przepracowany czas do redmine pod zadaniem #{issue_id} - {time_elapsed} godzin.")
         # Insert user work to database.
         cursor.execute("INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
                        "(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, float_time_elapsed, comment,))
-        logging.info(f"Umieszczono w bazie danych dodany manualnie przepracowany czas pod zadaniem #{issue_id} - {float_time_elapsed} godzin.")
+        logging.info(
+            f"Umieszczono w bazie danych dodany manualnie przepracowany czas pod zadaniem #{issue_id} - {float_time_elapsed} godzin.")
 
         # Apply changes and close connection to sqlite database.
         conn.commit()
         logging.info("Zakommitowano zmiany w bazie danych.")
         conn.close()
 
-        print("", Panel(Text(f"\nDodano!"
-                             f"\n\nSpędzony czas: {hours} godzin, {minutes} minut."
-                             f"\nKomentarz: {comment}\n", justify="center", style="white"), style=get_color("green"),
-                        title="[bold orange3]CZASOINATOR"))
+        console.print("", Panel(Text(f"\nDodano!"
+                                     f"\n\nSpędzony czas: {hours} godzin, {minutes} minut."
+                                     f"\nKomentarz: {comment}\n", justify="center", style="white"),
+                                style=get_color("green"),
+                                title="[bold orange3]CZASOINATOR"))
 
 
-def show_assigned_to_user(redmine, redmine_conf):
-    '''
-    The function is to connect to redmine, and retrieve all tasks 
-    in "Open" status that are assigned to the user. 
+def show_assigned_to_user(redmine):
+    """
+    The function is to connect to redmine, and retrieve all tasks
+    in "Open" status that are assigned to the user.
     The function also includes a filter that skips tasks that are
     in projects defined in config.ini, in the "EXCLUDE" section.
 
     Keyword arguments:
     redmine      -- Connection to redmine.
-    redmine_conf -- config.ini stored in variable, used for pbtaining EXCLUDE key.
-    '''
+    """
 
     progress_columns = (
         "[progress.description]{task.description}",
@@ -480,7 +495,7 @@ def show_assigned_to_user(redmine, redmine_conf):
 
     # Generate column to show data from redmine
     table = Table(show_header=True, header_style=get_color("bold_purple"),
-                  title=f'[{get_color("bold_blue")}]Zadania przypisane do: {user_name}, ID: {user_id}', 
+                  title=f'[{get_color("bold_blue")}]Zadania przypisane do: {user_name}, ID: {user_id}',
                   show_lines=True, box=box.DOUBLE, expand=True)
 
     table.add_column("Typ zadania", justify="center")
@@ -496,7 +511,7 @@ def show_assigned_to_user(redmine, redmine_conf):
 
     # Filter issues with "open" status assigned to use, excluding groups.
     issues = redmine.issue.filter(assigned_to_id=user_id)
-    
+
     if len(issues) > 0:
         # Progress bar section. Progress bar has two attributes:
         # task   -- is one and only progress bar.
@@ -546,44 +561,44 @@ def show_assigned_to_user(redmine, redmine_conf):
                 for time_entry in issue.time_entries:
                     info = redmine.time_entry.get(time_entry)
                     total += info.hours
-                    
+
                 # Convert float time to HH:MM
                 time_spent = float_to_hhmm(round(total, 2))
 
                 # Add a row to the table to display it after data collection.
                 table.add_row(f"{issue.tracker['name']}",
-                            f"{issue.subject}",
-                            f"[{priority_color}]{issue.priority}[/{priority_color}]",
-                            f"[{status_color}]{str(issue.status)}[/{status_color}]",
-                            f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]", 
-                            f"{time_spent}",
-                            f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
+                              f"{issue.subject}",
+                              f"[{priority_color}]{issue.priority}[/{priority_color}]",
+                              f"[{status_color}]{str(issue.status)}[/{status_color}]",
+                              f"[{done_color}]{str(issue.done_ratio)}[/{done_color}]",
+                              f"{time_spent}",
+                              f"[{get_color('light_blue')}][link={redmine_conf['ADDRESS']}/issues/{issue.id}]#{issue.id}[/link][/{get_color('light_blue')}]")
 
                 # Reset variable for next issue.
                 total = 0
 
             end = timer()
-            logging.info(f"Zakończono przetwarzanie zadań przypisanych do usera. Czas operacyjny: {end - start} sekund")        
+            logging.info(f"Zakończono przetwarzanie zadań przypisanych do usera. Czas operacyjny: {end - start} sekund")
 
-        # Show table with issues.
+            # Show table with issues.
         console.print("", table)
 
     else:
         end = timer()
-        logging.info(f"Zakończono przetwarzanie zadań przypisanych do usera. Brak danych do wyświetlenia.")
-        print("", Panel(Text(f"\nBrak zadań przypisanych do: {user_name}, {user_id}\n", justify="center",
-                            style=get_color("bold_red")),
-                        title="[bold orange3]CZASOINATOR"))
+        logging.info(
+            f"Zakończono przetwarzanie zadań przypisanych do usera. Brak danych do wyświetlenia. Czas operacyjny: {end - start} sekund")
+        console.print("", Panel(Text(f"\nBrak zadań przypisanych do: {user_name}, {user_id}\n", justify="center",
+                                     style=get_color("bold_red")),
+                                title="[bold orange3]CZASOINATOR"))
 
-    
 
 def stats(cursor):
-    '''
+    """
     Show stats about usage to user - data is taken from database, not from redmine.
 
     Keyword arguments:
     cursor  -- Cursor for executing SQL commands.
-    '''
+    """
     cursor.execute("SELECT SPEDZONY_CZAS FROM BAZA_DANYCH")
     rows = cursor.fetchall()
     total_hours = 0
@@ -594,28 +609,28 @@ def stats(cursor):
     # Convert float time to HH:MM
     total_hours = float_to_hhmm(total_hours)
 
-
-    print("", Panel(Text(f"\n Czas spędzony z CZASOINATOREM: {total_hours.split(':')[0]} godzin, {total_hours.split(':')[1]} minut\n", justify="center", style="white"),
-                    style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
+    console.print("", Panel(Text(
+        f"\n Czas spędzony z CZASOINATOREM: {total_hours.split(':')[0]} godzin, {total_hours.split(':')[1]} minut\n",
+        justify="center", style="white"),
+        style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
 
 
 if __name__ == "__main__":
-    redmine_conf = init()
-    redmine = welcome_user(redmine_conf)
+    redmine = welcome_user()
     while True:
         cursor, choose, conn = get_started(frame_title)
         if choose == str(1):
             issue_stopwatch(redmine, cursor, conn)
         if choose == str(2):
             _, _, day = get_time()
-            show_work(cursor, redmine_conf, day)
+            show_work(cursor, day)
         if choose == str(3):
             _, day, _ = get_time()
-            show_work(cursor, redmine_conf, day)
+            show_work(cursor, day)
         if choose == str(4):
             add_manually_to_redmine(redmine, cursor)
         if choose == str(5):
-            show_assigned_to_user(redmine, redmine_conf)
+            show_assigned_to_user(redmine)
         if choose == str(6):
             stats(cursor)
         if choose == str(7):
