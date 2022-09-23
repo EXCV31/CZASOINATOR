@@ -1,6 +1,4 @@
-import datetime
 import requests.exceptions
-from redminelib import Redmine
 import redminelib.exceptions
 import calendar
 import time
@@ -20,6 +18,13 @@ import re
 import platform
 import subprocess
 
+# Files imports
+from config.setup_config_and_connection import parse_config
+from helpers.colors import get_color
+from helpers.get_today_or_yesterday import get_time
+from helpers.convert_float import float_to_hhmm
+from helpers.error_handler import display_error
+
 logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %('
                                                                                               'levelname)s: %('
                                                                                               'message)s')
@@ -33,26 +38,14 @@ logging.info("Aplikacja została uruchomiona")
 
 
 def welcome_user():
+    global frame_title, redmine_conf
     """Parse config, log into redmine and greet user."""
-
-    global frame_title
-    global redmine_conf
     console.rule(
         f"[{get_color('bold_orange')}]CZASOINATOR[/{get_color('bold_orange')}] - Trwa ładowanie aplikacji...", )
 
-    # Set configparser and read config.
-    logging.info("Parsowanie config.ini...")
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-    redmine_conf = config['REDMINE']
-    logging.info("Parsowanie ukończone.")
+    # Import redmine connection from helper file
+    redmine, redmine_conf, frame_title = parse_config()
 
-    # Setup frame title: display CZASOINATOR - {split address from config}
-    frame_title = f"[{get_color('bold_orange')}]CZASOINATOR[/{get_color('bold_orange')}] - [bold red]{redmine_conf['ADDRESS'].split('://')[1]}[/bold red]"
-
-    # Make a connection to Redmine.
-    logging.info(f"Próba połączenia z serwerem {redmine_conf['ADDRESS']}...")
-    redmine = Redmine(redmine_conf["ADDRESS"], key=redmine_conf["API_KEY"])
     try:
         user = redmine.user.get('current')
     except requests.exceptions.ConnectionError:
@@ -84,95 +77,6 @@ def welcome_user():
     # It just better look with that.
     time.sleep(0.5)
     return redmine
-
-
-def display_error(text):
-    """
-    Function used for displaying errors - normal and critical. Often used before exit_program().
-
-    Keyword arguments:
-    text -- Text of error displayed in frame.
-    """
-    print("")
-    console.print(
-        Panel(Text(f"\n{text}\n", justify="center", style="white"), style=get_color("red"), title=frame_title))
-    logging.error(text)
-
-
-def get_color(color):
-    """
-    Function is called when there's need for color, especially for rendering tables.
-
-    Keyword arguments:
-    color -- Used in matching color with hex code below.
-    """
-
-    if color == "bold_red":
-        return "bold #ff4242"
-    if color == "red":
-        return "#ff4242"
-    if color == "bold_orange":
-        return "bold #d99011"
-    if color == "orange":
-        return "#d99011"
-    if color == "bold_green":
-        return "bold #25ba14"
-    if color == "green":
-        return "#25ba14"
-    if color == "bold_purple":
-        return "bold #c071f5"
-    if color == "bold_pink":
-        return "bold #ff00ee"
-    if color == "light_blue":
-        return "#6bb0c9"
-    if color == "bold_blue":
-        return "bold #2070b2"
-
-
-def get_time():
-    """
-    Return current time, yesterday and today. If today is Monday,
-    function will return Friday as yesterday.
-    """
-    # Get and format current date
-    now = datetime.datetime.now()
-    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
-
-    # Check if today is monday - used for valid "yesterday" when it's weekend. If today is monday, yesterday is friday.
-    if now.weekday() == 0:
-        yesterday = now - datetime.timedelta(days=3)
-        yesterday = str(yesterday).split(" ")[0]
-    else:
-        yesterday = now - datetime.timedelta(days=1)
-        yesterday = str(yesterday).split(" ")[0]
-
-    # Split current time from 2021-12-10 22:32:52 to 2021-12-10
-    today = current_time.split(" ")[0]
-
-    return current_time, yesterday, today
-
-
-def float_to_hhmm(float_time):
-    """
-    Change float time to HH:MM format.
-
-    Keyword arguments:
-    float_time -- time in float format e.g  1.75
-    """
-
-    # Multiply float time by 60 to get minutes, split into hours and minutes
-    float_time = float_time * 60
-    hours, minutes = divmod(float_time, 60)
-
-    # Drop floating points numbers e.g. 41.39999999999998 -> 41,
-    # then cast to str to add trailing or leading zero - to get always 2-digit minutes.
-    minutes = str(int(minutes))
-    if len(minutes) == 1 and minutes.startswith("0"):
-        minutes += "0"
-    elif len(minutes) == 1 and int(minutes) > 0:
-        minutes = "0" + minutes
-
-    return f"{int(hours)}:{minutes}"
 
 
 def get_started(frame_title):
@@ -613,7 +517,7 @@ def stats(cursor):
     console.print("", Panel(Text(
         f"\n Czas spędzony z CZASOINATOREM: {total_hours.split(':')[0]} godzin, {total_hours.split(':')[1]} minut\n",
         justify="center", style="white"),
-        style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"))
+        style=get_color("light_blue"), title=f"{get_color('bold_orange')}CZASOINATOR"))
 
 
 if __name__ == "__main__":
