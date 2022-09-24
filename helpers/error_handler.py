@@ -1,3 +1,9 @@
+import logging
+
+logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %('
+                                                                                              'levelname)s: %('
+                                                                                              'message)s')
+
 def display_error(text):
     """
     Function used for displaying errors - normal and critical. Often used before exit_program().

@@ -24,6 +24,8 @@ from helpers.colors import get_color
 from helpers.get_today_or_yesterday import get_time
 from helpers.convert_float import float_to_hhmm
 from helpers.error_handler import display_error
+from modules.days_off import show_days_off
+from helpers.exit_handler import exit_program
 
 logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %('
                                                                                               'levelname)s: %('
@@ -51,15 +53,15 @@ def welcome_user():
     except requests.exceptions.ConnectionError:
         display_error("Wystąpił problem z połączeniem do Redmine. Sprawdź stan sieci!")
         input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
-        exit_program()
+        exit_program(1)
     except redminelib.exceptions.AuthError:
         display_error("Użyto nieprawidłowych danych logowania!")
         input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
-        exit_program()
+        exit_program(1)
     except redminelib.exceptions.ForbiddenError:
         display_error("Brak dostępu do danych API! Skontaktuj się z administratorem sieci.")
         input("\nWciśnij ENTER aby zakończyć działanie programu... > ")
-        exit_program()
+        exit_program(1)
 
     # Clear terminal
     if platform.system() == "Linux" or platform.system() == "Darwin":
@@ -98,8 +100,9 @@ def get_started(frame_title):
                                  "\n3. Sprawdź wczorajsze postępy"
                                  "\n4. Dorzuć ręcznie czas do zadania"
                                  "\n5. Sprawdź zadania przypisane do Ciebie"
-                                 "\n6. Statystyki"
-                                 "\n7. Wyjście\n", justify="center", style="white"), style=get_color("light_blue"),
+                                 "\n6. Sprawdź swoje dni urlopowe"
+                                 "\n7. Statystyki"
+                                 "\n8. Wyjście\n", justify="center", style="white"), style=get_color("light_blue"),
                             title=frame_title))
         logging.info("Pokazano listę opcji do wyboru.")
 
@@ -116,13 +119,6 @@ def get_started(frame_title):
         "CREATE TABLE IF NOT EXISTS BAZA_DANYCH (DATA TEXT, NUMER_ZADANIA TEXT, "
         "NAZWA_ZADANIA TEXT, SPEDZONY_CZAS TEXT, KOMENTARZ TEXT);")
     return cursor, choose, conn
-
-
-def exit_program():
-    """Store logs about exit and... just exit"""
-
-    logging.info("Wyjście z aplikacji")
-    sys.exit(0)
 
 
 def issue_stopwatch(redmine, cursor, conn):
@@ -517,7 +513,7 @@ def stats(cursor):
     console.print("", Panel(Text(
         f"\n Czas spędzony z CZASOINATOREM: {total_hours.split(':')[0]} godzin, {total_hours.split(':')[1]} minut\n",
         justify="center", style="white"),
-        style=get_color("light_blue"), title=f"{get_color('bold_orange')}CZASOINATOR"))
+        style=get_color("light_blue"), title=f"[{get_color('bold_orange')}]CZASOINATOR"))
 
 
 if __name__ == "__main__":
@@ -537,8 +533,10 @@ if __name__ == "__main__":
         if choose == str(5):
             show_assigned_to_user(redmine)
         if choose == str(6):
-            stats(cursor)
+            show_days_off()
         if choose == str(7):
-            exit_program()
+            stats(cursor)
+        if choose == str(8):
+            exit_program(0)
         if choose == "?":
             info = False
