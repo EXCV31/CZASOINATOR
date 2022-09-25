@@ -29,7 +29,7 @@ def show_days_off():
             off_days_per_year = int(off_days_per_year)
         except ValueError:
             display_error("Błąd parsowania cache dni urlopowych lub klucza OFF_DAYS_PER_YEAR w config/config.ini. Sprawdź poprawne wypełnienie tych plików.")
-            exit_program(1)
+            return
         
         # Check if year has changed. If yes, add some days off to cache, you deserve it :)
         if year < current_date.year:
@@ -48,7 +48,7 @@ def show_days_off():
         # If we don't have off days from last year, simply display "none".
         # But if we have old vacation days, subtract them from the total vacation days.
         if old_days_off < 0:
-            old_days_off = "brak"
+            old_days_off = 0
         else:
             days_off = days_off - old_days_off
 
@@ -57,7 +57,31 @@ def show_days_off():
                                 , justify="center", style="white")
                         , style=get_color("light_blue"), title=frame_title))
 
+    choice = input("Idziesz na urlop? t/N: ")
+    if choice.lower() == "t":
+        print("")
+        amount = input("Wpisz ilość dni: ")
+
+        try:
+            amount = int(amount)
+        except ValueError:
+            display_error("Błędna wartość dla pola: Ilość dni")
+            return
+
+        # Check if user typed a vacation days lower than zero or higher than his current vacation days.
+        if amount <= 0 or amount > days_off + old_days_off:
+            display_error("Błędna wartość dla pola: Ilość dni")
+            return
         
+        # Save new value to cache. 
+        with open("cache/days_off.cache", "w") as cache:
+            cache.write(f"{days_off + old_days_off - amount},{current_date.year}")
+
+        console.print("", Panel(Text(f"\nDodano, miłego wypoczynku!"
+                                     f"\n\nPozostało Ci w sumie {days_off + old_days_off - amount} dni urlopowych.\n",
+                                     justify="center", style="white"), style=get_color("green"),
+                                title=frame_title))
+
 
 def change(amount, year):
     with open("cache/days_off.cache", "w") as cache:
