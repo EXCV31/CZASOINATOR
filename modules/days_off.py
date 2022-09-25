@@ -51,7 +51,7 @@ def show_days_off():
             old_days_off = 0
         else:
             days_off = days_off - old_days_off
-
+        print("")
         console.print(Panel(Text(f"\nPozostałe dni urlopowe (nowe): {days_off}\n"
                                 f"\nPozostałe dni urlopowe (stare): {old_days_off}\n"
                                 , justify="center", style="white")
