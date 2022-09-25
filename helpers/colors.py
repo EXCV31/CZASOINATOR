@@ -26,3 +26,7 @@ def get_color(color):
         return "#6bb0c9"
     if color == "bold_blue":
         return "bold #2070b2"
+    if color == "white":
+        return "#ffffff"
+    if color == "blue":
+        return "#2070b2"

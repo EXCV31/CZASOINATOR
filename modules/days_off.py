@@ -1,15 +1,14 @@
 from datetime import date
-from config.setup_config_and_connection import parse_config
-from helpers.error_handler import display_error
-from helpers.exit_handler import exit_program
-from helpers.colors import get_color
 import logging
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-
-
+# File imports
+from config.setup_config_and_connection import redmine_conf, frame_title
+from helpers.error_handler import display_error
+from helpers.exit_handler import exit_program
+from helpers.colors import get_color
 
 logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %('
                                                                                               'levelname)s: %('
@@ -17,8 +16,7 @@ logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.
 console = Console()
 
 def show_days_off():
-    _, config, _ = parse_config()
-    off_days_per_year = config["OFF_DAYS_PER_YEAR"]
+    off_days_per_year = redmine_conf["OFF_DAYS_PER_YEAR"]
     current_date = date.today()
 
     with open("cache/days_off.cache", "r") as cache:
@@ -57,7 +55,7 @@ def show_days_off():
         console.print(Panel(Text(f"\nPozostałe dni urlopowe (nowe): {days_off}\n"
                                 f"\nPozostałe dni urlopowe (stare): {old_days_off}\n"
                                 , justify="center", style="white")
-                        , style=get_color("light_blue"), title=f"[{get_color('bold_orange')}]CZASOINATOR"))
+                        , style=get_color("light_blue"), title=frame_title))
 
         
 

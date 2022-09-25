@@ -18,8 +18,8 @@ import re
 import platform
 import subprocess
 
-# Files imports
-from config.setup_config_and_connection import parse_config
+# File imports
+from config.setup_config_and_connection import redmine, redmine_conf, frame_title
 from helpers.colors import get_color
 from helpers.get_today_or_yesterday import get_time
 from helpers.convert_float import float_to_hhmm
@@ -40,13 +40,9 @@ logging.info("Aplikacja została uruchomiona")
 
 
 def welcome_user():
-    global frame_title, redmine_conf
     """Parse config, log into redmine and greet user."""
     console.rule(
-        f"[{get_color('bold_orange')}]CZASOINATOR[/{get_color('bold_orange')}] - Trwa ładowanie aplikacji...", )
-
-    # Import redmine connection from helper file
-    redmine, redmine_conf, frame_title = parse_config()
+        f"[{get_color('bold_orange')}]CZASOINATOR [{get_color('white')}]- [{get_color('blue')}]Trwa ładowanie aplikacji...", )
 
     try:
         user = redmine.user.get('current')
@@ -396,7 +392,7 @@ def show_assigned_to_user(redmine):
 
     # Generate column to show data from redmine
     table = Table(show_header=True, header_style=get_color("bold_purple"),
-                  title=f'[{get_color("bold_blue")}]Zadania przypisane do: {user_name}, ID: {user_id}',
+                  title=f"[{get_color('bold_blue')}]Zadania przypisane do: {user_name}, ID: {user_id}",
                   show_lines=True, box=box.DOUBLE, expand=True)
 
     table.add_column("Typ zadania", justify="center")
@@ -418,19 +414,21 @@ def show_assigned_to_user(redmine):
         # task   -- is one and only progress bar.
         # update -- function used to update progress bar in each iteration over list of issues.
         with Progress(*progress_columns, expand=True) as progress_bar:
-
+            counter = 0
+            
             # Formatting :)
             console.print("")
 
             # Add a proggress bar.
-            task = progress_bar.add_task("[blue]Pobieranie danych...", total=len(issues))
+            task = progress_bar.add_task(f"[{get_color('blue')}]Pobieranie danych...", total=len(issues))
             for issue in issues:
 
                 # Updating progress bar before processing issue, because of EXCLUDE "if" below.
-                progress_bar.update(task, advance=1)
-
+                counter +=1
+                progress_bar.update(task, advance=1, description=f"[{get_color('blue')}]Pobieranie danych - {counter} / {len(issues)}")
+                
                 # Delay for progress bar pretty-print.
-                time.sleep(0.005)
+                time.sleep(0.001)
 
                 # Skip project name if any mentioned in config.ini.
                 if issue.project["name"] in redmine_conf["EXCLUDE"].split("\n"):
@@ -490,7 +488,7 @@ def show_assigned_to_user(redmine):
             f"Zakończono przetwarzanie zadań przypisanych do usera. Brak danych do wyświetlenia. Czas operacyjny: {end - start} sekund")
         console.print("", Panel(Text(f"\nBrak zadań przypisanych do: {user_name}, {user_id}\n", justify="center",
                                      style=get_color("bold_red")),
-                                title="[bold orange3]CZASOINATOR"))
+                                title=frame_title))
 
 
 def stats(cursor):
@@ -513,7 +511,7 @@ def stats(cursor):
     console.print("", Panel(Text(
         f"\n Czas spędzony z CZASOINATOREM: {total_hours.split(':')[0]} godzin, {total_hours.split(':')[1]} minut\n",
         justify="center", style="white"),
-        style=get_color("light_blue"), title=f"[{get_color('bold_orange')}]CZASOINATOR"))
+        style=get_color("light_blue"), title=frame_title))
 
 
 if __name__ == "__main__":

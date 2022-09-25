@@ -15,11 +15,13 @@ def parse_config():
     redmine_conf = config['REDMINE']
     logging.info("Parsowanie ukończone.")
 
-    # Setup frame title: display CZASOINATOR - {split address from config}
-    frame_title = f"[{get_color('bold_orange')}]CZASOINATOR[/{get_color('bold_orange')}] - [bold red]{redmine_conf['ADDRESS'].split('://')[1]}[/bold red]"
+    # Setup frame title: display <orange>CZASOINATOR <white>- <red>{split address from config}
+    frame_title = f"[{get_color('bold_orange')}]CZASOINATOR [{get_color('white')}]- [{get_color('bold_red')}]{redmine_conf['ADDRESS'].split('://')[1]}"
 
     # Make a connection to Redmine.
     logging.info(f"Próba połączenia z serwerem {redmine_conf['ADDRESS']}...")
     redmine = Redmine(redmine_conf["ADDRESS"], key=redmine_conf["API_KEY"])
 
     return redmine, redmine_conf, frame_title
+
+redmine, redmine_conf, frame_title = parse_config()
