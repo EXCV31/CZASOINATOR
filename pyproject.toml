@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "czasoinator"
+version = "1.0.0"
+description = "Track your Redmine progress with CZASOINATOR!"
+authors = ["Filip Laszczak"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+requests = "^2.28.1"
+python-redmine = "^2.3.0"
+rich = "^12.5.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

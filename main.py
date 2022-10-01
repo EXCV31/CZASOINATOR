@@ -4,7 +4,7 @@ import calendar
 import time
 from datetime import date
 import sys
-import sqlite3
+
 from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
@@ -20,12 +20,15 @@ import subprocess
 
 # File imports
 from config.setup_config_and_connection import redmine, redmine_conf, frame_title
+from database.setup_db import conn, cursor
 from helpers.colors import get_color
 from helpers.get_today_or_yesterday import get_time
 from helpers.convert_float import float_to_hhmm
 from helpers.error_handler import display_error
-from modules.days_off import show_days_off
 from helpers.exit_handler import exit_program
+from helpers.options import show_options
+from modules.days_off import show_days_off
+from modules.issue_stopwatch import start_issue_stopwatch
 
 logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %('
                                                                                               'levelname)s: %('
@@ -75,133 +78,6 @@ def welcome_user():
     # It just better look with that.
     time.sleep(0.5)
     return redmine
-
-
-def get_started(frame_title):
-    """
-    Point where program start with user interaction.
-
-    Keyword arguments:
-    frame_title -- The part of the frame that displays in the middle of it.
-    It contains information such as the name of the program and the address of the redmine it is connected to.
-    """
-    global choose
-    global info
-
-    # Info variable is being used to show user a legend of possible options.
-    if not info:
-        console.print(Panel(Text("\nWybierz co chcesz zrobić:\n"
-                                 "\n1. Uruchom zliczanie czasu"
-                                 "\n2. Sprawdź dzisiejsze postępy"
-                                 "\n3. Sprawdź wczorajsze postępy"
-                                 "\n4. Dorzuć ręcznie czas do zadania"
-                                 "\n5. Sprawdź zadania przypisane do Ciebie"
-                                 "\n6. Sprawdź swoje dni urlopowe"
-                                 "\n7. Statystyki"
-                                 "\n8. Wyjście\n", justify="center", style="white"), style=get_color("light_blue"),
-                            title=frame_title))
-        logging.info("Pokazano listę opcji do wyboru.")
-
-        # Turn off info after showing legend once.
-        info = True
-
-    # Ask user to choose a module
-    choose = input("\nWybór > ")
-
-    # Set up sqlite
-    conn = sqlite3.connect("czasoinator.sqlite")
-    cursor = conn.cursor()
-    cursor.execute(
-        "CREATE TABLE IF NOT EXISTS BAZA_DANYCH (DATA TEXT, NUMER_ZADANIA TEXT, "
-        "NAZWA_ZADANIA TEXT, SPEDZONY_CZAS TEXT, KOMENTARZ TEXT);")
-    return cursor, choose, conn
-
-
-def issue_stopwatch(redmine, cursor, conn):
-    """
-    The function is responsible for measuring the time for the task selected by the user.
-    After the measurement is completed, it places the collected data in the database.
-
-    Keyword arguments:
-    redmine -- Connection to redmine.
-    cursor  -- Cursor for executing SQL commands.
-    conn    -- Connection to database.
-    """
-
-    # Stop variable is used to stop the stopwatch.
-    stop = ""
-
-    issue_id = input("\nPodaj numer zadania > ")
-
-    # Start stopwatch
-    start_timestamp = int(calendar.timegm(time.gmtime()))
-
-    # Get issue name
-    try:
-        issue_name = str(redmine.issue.get(issue_id))
-    except redminelib.exceptions.ForbiddenError:
-        display_error("403 - Brak dostępu do wybranego zadania!")
-        return
-    except redminelib.exceptions.ResourceNotFoundError:
-        display_error("404 - Wybrane zadanie nie istnieje!")
-        return
-
-    console.print("", Panel(Text(f"\nWybrano zadanie: {issue_name}\n", justify="center", style="white"),
-                            style=get_color("light_blue"), title="[bold orange3]CZASOINATOR"),
-                  "")
-    logging.info(f"Rozpoczęto mierzenie czasu dla zadania #{issue_id}")
-
-    # Wait for input from user, to stop the stopwatch.
-    console.print(f'[{get_color("bold_green")}]Rozpoczęto mierzenie czasu![/{get_color("bold_green")}]')
-    while stop != "k":
-        stop = console.input(
-            f'\nGdy zakończysz pracę nad zadaniem wpisz [{get_color("bold_green")}]k[/{get_color("bold_green")}], lub [{get_color("bold_red")}]x[/{get_color("bold_red")}] aby anulować > ')
-        if stop.lower() == "x":
-            return
-    logging.info(f"Zakończono mierzenie czasu dla zadania #{issue_id}")
-
-    # Stop stopwatch and calculate timestamp to hours e.g 2.63.
-    stop_timestamp = int(calendar.timegm(time.gmtime()))
-    float_time_elapsed = round(((stop_timestamp - start_timestamp) / 60 / 60), 2)
-    time_elapsed = float_to_hhmm(float_time_elapsed)
-
-    console.print("", Panel(
-        Text(f"\nZakończono pracę nad #{issue_id}!\n Spędzony czas: {time_elapsed}\n ", justify="center",
-             style="white"), style=get_color("light_blue"),
-        title="[bold orange3]CZASOINATOR"))
-
-    comment = input("\nDodaj komentarz > ")
-
-    decision = input("Dodać czas do zadania w redmine? T/n > ")
-    if decision.lower() == "t" or decision == "":
-
-        # Catch problems with connection, permissions etc.
-        try:
-            redmine.time_entry.create(issue_id=issue_id, spent_on=date.today(),
-                                      hours=time_elapsed, activity_id=8, comments=comment)
-        except Exception as e:
-            print(f"Wystąpił błąd przy dodawaniu czasu do redmine - {e}")
-            logging.error(e)
-            return
-
-        logging.info(f"Dodano czas do redmine dla zadania #{issue_id}.")
-
-        console.print("", Panel(Text(f"\nDodano!"
-                                     f"\n\nSpędzony czas: {time_elapsed}"
-                                     f"\nKomentarz: {comment}\n",
-                                     justify="center", style="white"), style=get_color("green"),
-                                title="[bold orange3]CZASOINATOR"))
-
-        current_time, _, _ = get_time()
-
-        # Insert user work to database.
-        cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
-                    f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, float_time_elapsed, comment))
-        logging.info("Umieszczono przepracowany czas w bazie danych.")
-
-        # Apply changes and close connection to sqlite database.
-        conn.commit()
-        logging.info("Zacommitowano zmiany w bazie danych.")
 
 
 def show_work(cursor, day):
@@ -516,10 +392,16 @@ def stats(cursor):
 
 if __name__ == "__main__":
     redmine = welcome_user()
+    info = True
     while True:
-        cursor, choose, conn = get_started(frame_title)
+        if info is True:
+            show_options()
+            info = False
+    
+        choose = input("\nWybór > ")
+        
         if choose == str(1):
-            issue_stopwatch(redmine, cursor, conn)
+            start_issue_stopwatch()
         if choose == str(2):
             _, _, day = get_time()
             show_work(cursor, day)
@@ -537,4 +419,4 @@ if __name__ == "__main__":
         if choose == str(8):
             exit_program(0)
         if choose == "?":
-            info = False
+            info = True
