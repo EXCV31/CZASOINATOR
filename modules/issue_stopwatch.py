@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 import logging
-console = Console()
+import redminelib
 
 # File imports
 from config.setup_config_and_connection import redmine
@@ -13,15 +13,20 @@ from helpers.colors import get_color
 from config.setup_config_and_connection import frame_title
 from helpers.convert_float import float_to_hhmm
 from helpers.get_today_or_yesterday import get_time
+from helpers.error_handler import display_error
 
+console = Console()
 logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.DEBUG, format='[%(asctime)s] %('
                                                                                               'levelname)s: %('
                                                                                               'message)s')
 
+
 def start_issue_stopwatch():
     """
     The function is responsible for measuring the time for the task selected by the user.
-    After the measurement is completed, it places the collected data in the database.
+    After the measurement is completed, it places the collected data in redmine and database.
+
+    Returns:
     """
 
     # Stop variable is used to stop the stopwatch.
@@ -51,7 +56,8 @@ def start_issue_stopwatch():
     console.print(f'[{get_color("bold_green")}]Rozpoczęto mierzenie czasu![/{get_color("bold_green")}]')
     while stop != "k":
         stop = console.input(
-            f'\nGdy zakończysz pracę nad zadaniem wpisz [{get_color("bold_green")}]k[/{get_color("bold_green")}], lub [{get_color("bold_red")}]x[/{get_color("bold_red")}] aby anulować > ')
+            f'\nGdy zakończysz pracę nad zadaniem wpisz [{get_color("bold_green")}]k[/{get_color("bold_green")}], '
+            f'lub [{get_color("bold_red")}]x[/{get_color("bold_red")}] aby anulować > ')
         if stop.lower() == "x":
             return
     logging.info(f"Zakończono mierzenie czasu dla zadania #{issue_id}")
@@ -89,11 +95,9 @@ def start_issue_stopwatch():
                                      justify="center", style="white"), style=get_color("green"),
                                 title=frame_title))
 
-        
-
         # Insert user work to database.
         cursor.execute(f"INSERT INTO BAZA_DANYCH (DATA, NUMER_ZADANIA, NAZWA_ZADANIA, SPEDZONY_CZAS, KOMENTARZ) VALUES "
-                    f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, float_time_elapsed, comment))
+                       f"(?, ?, ?, ?, ?)", (current_time, issue_id, issue_name, float_time_elapsed, comment))
         logging.info("Umieszczono przepracowany czas w bazie danych.")
 
         # Apply changes and close connection to sqlite database.
