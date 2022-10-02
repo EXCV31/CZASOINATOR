@@ -1,9 +1,12 @@
 def float_to_hhmm(float_time):
     """
-    Change float time to HH:MM format.
+    Convert float time to HH:MM format. 1.75 => 1:45.
 
-    Keyword arguments:
-    float_time -- time in float format e.g  1.75
+    Args:
+        float_time: time in float.
+
+    Returns: Time in HH:MM format.
+
     """
 
     # Multiply float time by 60 to get minutes, split into hours and minutes

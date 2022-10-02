@@ -1,9 +1,16 @@
 import datetime
 
+
 def get_time():
     """
     Return current time, yesterday and today. If today is Monday,
     function will return Friday as yesterday.
+
+    Returns:
+        current_time: Current time in format YYYY-MM-DD HH:MM:SS
+        yesterday: Yesterday in format YYYY-MM-DD
+        today: Today in format YYYY-MM-DD
+
     """
     # Get and format current date
     now = datetime.datetime.now()

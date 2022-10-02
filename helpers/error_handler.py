@@ -9,12 +9,16 @@ logging.basicConfig(filename='czasoinator.log', encoding='utf-8', level=logging.
                                                                                               'levelname)s: %('
                                                                                               'message)s')
 console = Console()
+
+
 def display_error(text):
     """
-    Function used for displaying errors - normal and critical. Often used before exit_program().
+    Function used for displaying errors - normal and critical. Often used before helpers/exit_handler.py
+    Args:
+        text: Text of error displayed in frame.
 
-    Keyword arguments:
-    text -- Text of error displayed in frame.
+    Returns:
+
     """
     print("")
     console.print(
