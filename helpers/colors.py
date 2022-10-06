@@ -18,7 +18,7 @@ def get_color(color):
             return "bold #d99011"
         case "orange":
             return "bold #d99011"
-        case "bold green":
+        case "bold_green":
             return "bold #25ba14"
         case "green":
             return "#25ba14"
