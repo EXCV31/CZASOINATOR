@@ -66,10 +66,7 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 * ADDRESS=http://demo.redmine.org // Adres instancji redmine
 * API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416 // Klucz API
 * DAILY=11:00:00 // Godzina daily
-* EXCLUDE: // Projekty które nie będą uwzględniane w "Pokaż zadania przypisane do mnie"
-    xxx
-    yyy
-    zzz
+* EXCLUDE: // Projekty które nie będą uwzględniane w "Pokaż zadania przypisane do mnie". Każdy projekt w nowej linii, poprzedzony wcięciem.
 * OFF_DAYS_PER_YEAR=20 // Ilość dni urlopowych w ciągu roku
 
 
