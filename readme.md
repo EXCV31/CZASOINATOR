@@ -49,11 +49,12 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 ## Użycie
 
 ### Do instalacji:
-* pip install -r requirements.txt
+* Swoim ulubionym menedżerem pakietów zainstaluj poetry - menedżer zarządzania zależnościami w Pythonie
+* W folderze z CZASOINATORem wpisz: `poetry install`
 
 ### Do wypełnienia:
 
-#### Config.ini:
+#### CZASOINATOR/config/config.ini:
 * ADDRESS= Adres redmine
 * API_KEY= Klucz API
 * DAILY= Godzina daily w formacie HH:MM:SS
@@ -62,13 +63,15 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 #### Przykładowe wypełnienie:
 * [REDMINE]
-* ADDRESS=http://demo.redmine.org
-* API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416
-* DAILY=11:00:00
-* EXCLUDE=Samochody
-* PROGRAMMER_MODE=true
+* ADDRESS=http://demo.redmine.org // Adres instancji redmine
+* API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416 // Klucz API
+* DAILY=11:00:00 // Godzina daily
+* EXCLUDE: // Projekty które nie będą uwzględniane w "Pokaż zadania przypisane do mnie"
+    xxx
+    yyy
+    zzz
+* OFF_DAYS_PER_YEAR=20 // Ilość dni urlopowych w ciągu roku
 
-### TODO:
-- Ogarnąć pytanie "Kontynuować? t/n > " w stylu linuxowym (duże T i reakcja enter == tak)
-- Sprawdzić czy nie wyrzucić nawiasów strzałkowych i dodać dwukropek
-- Textual? ( ͡° ͜ʖ ͡°)
+
+### Jak uruchomić?
+* w folderze z CZASOINATORem wpisz `poetry shell python3 main.py`
