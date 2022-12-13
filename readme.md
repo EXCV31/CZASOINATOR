@@ -33,13 +33,13 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 * Po wpisaniu ID zadania i przepracowanego czasu wrzucenie tego do redmine i lokalnej bazy.
 
-### 5. Dorzuć ręcznie czas do bazy - własne zadanie - Przydatne na demo, konsultacje i inne
-
-* Odpytanie o nazwę zadania, przepracowane godziny oraz komentarz, i wrzucenie tego do lokalnej bazy.
-
-### 6. Sprawdź zadania przypisane do Ciebie - gdy nie wiesz czym się zająć
+### 5. Sprawdź zadania przypisane do Ciebie - gdy nie wiesz czym się zająć
 
 * Odpytanie redmine o zagadnienia przypisane do ID użytkownika - pobierane przez API key. Wyświetlane w formie tabeli. W przypadku braku zadań wyświetlany odpowiedni komunikat. W przypadku "lepszych" terminali po kliknięciu LPM wraz z CTRL w numer zadania zostanie otworzona przeglądarka z tym zadaniem.
+
+### 6. Sprawdź swoje dni urlopowe - Żebyś nie musiał męczyć administracji
+
+* Pobierana z cache oraz config.ini ilość dni urlopowych, oraz mini-tool do zarządzania nimi.
 
 ### 7. Statystyki
 
