@@ -33,13 +33,13 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 * Po wpisaniu ID zadania i przepracowanego czasu wrzucenie tego do redmine i lokalnej bazy.
 
-### 5. Dorzuć ręcznie czas do bazy - własne zadanie - Przydatne na demo, konsultacje i inne
-
-* Odpytanie o nazwę zadania, przepracowane godziny oraz komentarz, i wrzucenie tego do lokalnej bazy.
-
-### 6. Sprawdź zadania przypisane do Ciebie - gdy nie wiesz czym się zająć
+### 5. Sprawdź zadania przypisane do Ciebie - gdy nie wiesz czym się zająć
 
 * Odpytanie redmine o zagadnienia przypisane do ID użytkownika - pobierane przez API key. Wyświetlane w formie tabeli. W przypadku braku zadań wyświetlany odpowiedni komunikat. W przypadku "lepszych" terminali po kliknięciu LPM wraz z CTRL w numer zadania zostanie otworzona przeglądarka z tym zadaniem.
+
+### 6. Sprawdź swoje dni urlopowe - Żebyś nie musiał męczyć administracji
+
+* Pobierana z cache oraz config.ini ilość dni urlopowych, oraz mini-tool do zarządzania nimi.
 
 ### 7. Statystyki
 
@@ -49,11 +49,12 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 ## Użycie
 
 ### Do instalacji:
-* pip install -r requirements.txt
+* Swoim ulubionym menedżerem pakietów zainstaluj poetry - menedżer zarządzania zależnościami w Pythonie
+* W folderze z CZASOINATORem wpisz: `poetry install`
 
 ### Do wypełnienia:
 
-#### Config.ini:
+#### CZASOINATOR/config/config.ini:
 * ADDRESS= Adres redmine
 * API_KEY= Klucz API
 * DAILY= Godzina daily w formacie HH:MM:SS
@@ -62,13 +63,15 @@ dlatego dokumentacja i opis funkcjonalności powstała tylko po polsku, z przymr
 
 #### Przykładowe wypełnienie:
 * [REDMINE]
-* ADDRESS=http://demo.redmine.org
-* API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416
-* DAILY=11:00:00
-* EXCLUDE=Samochody
-* PROGRAMMER_MODE=true
+* ADDRESS=http://demo.redmine.org // Adres instancji redmine
+* API_KEY=21pye5a470d08f83130b5e001bdkh56ff68f0416 // Klucz API
+* DAILY=11:00:00 // Godzina daily
+* EXCLUDE: // Projekty które nie będą uwzględniane w "Pokaż zadania przypisane do mnie"
+    xxx
+    yyy
+    zzz
+* OFF_DAYS_PER_YEAR=20 // Ilość dni urlopowych w ciągu roku
 
-### TODO:
-- Ogarnąć pytanie "Kontynuować? t/n > " w stylu linuxowym (duże T i reakcja enter == tak)
-- Sprawdzić czy nie wyrzucić nawiasów strzałkowych i dodać dwukropek
-- Textual? ( ͡° ͜ʖ ͡°)
+
+### Jak uruchomić?
+* w folderze z CZASOINATORem wpisz `poetry shell python3 main.py`
